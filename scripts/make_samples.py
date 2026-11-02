@@ -860,7 +860,8 @@ def build_contract() -> tuple[Page, list[dict]]:
             "鉴于甲方拟委托乙方承担其业务系统的定制开发与后续运维服务，双方本着平等自愿、",
             "诚实信用的原则，经友好协商订立本合同，以资共同信守。",
         ],
-        reg(18),
+        reg(19),
+        leading=1.85,
         fill=INK,
         score=0.94,
         record=False,
@@ -880,9 +881,10 @@ def build_contract() -> tuple[Page, list[dict]]:
         )
         return page.text_lines(
             left,
-            top + 40,
+            top + 42,
             lines,
-            reg(18),
+            reg(19),
+            leading=1.85,
             fill=INK,
             candidates=body_candidates,
             score=body_score,
@@ -955,58 +957,35 @@ def build_contract() -> tuple[Page, list[dict]]:
         0.96,
         0.93,
     )
-    clause(
-        964,
-        "第五条　违约责任",
-        [
-            "任何一方违反本合同约定，应向守约方支付相当于合同金额 5% 的违约金；违约金",
-            "不足以弥补守约方损失的，还应赔偿差额。",
-        ],
-        0.97,
-        0.90,
-        record=False,
-    )
-    clause(
-        1076,
-        "第六条　其他约定",
-        [
-            "本合同一式肆份，甲乙双方各执贰份，具有同等法律效力。未尽事宜，由双方另行",
-            "协商并签订补充协议。",
-        ],
-        0.96,
-        0.91,
-        record=False,
-    )
-
     # 签署区
-    page.line(left, 1186, right, 1186, fill=RULE, width=1)
+    page.line(left, 1090, right, 1090, fill=RULE, width=1)
     page.text(
-        (left, 1206),
+        (left, 1110),
         "甲方（盖章）：杭州明远网络科技有限公司",
         reg(20),
         fill=INK,
         candidates=[candidate("甲方（盖章）：杭州明远网络科技有限公司", "primary", 0.95)],
     )
     page.text(
-        (672, 1206),
+        (672, 1110),
         "乙方（盖章）：南京海川信息技术有限公司",
         reg(20),
         fill=INK,
         candidates=[candidate("乙方（盖章）：南京海川信息技术有限公司", "primary", 0.95)],
     )
-    page.text((left, 1252), "授权代表（签字）：", reg(19), fill=INK_SOFT, score=0.93, record=False)
-    page.text((672, 1252), "授权代表（签字）：", reg(19), fill=INK_SOFT, score=0.93, record=False)
-    page.line(300, 1278, 560, 1278, fill=RULE_LIGHT, width=1)
-    page.line(860, 1278, 1120, 1278, fill=RULE_LIGHT, width=1)
+    page.text((left, 1156), "授权代表（签字）：", reg(19), fill=INK_SOFT, score=0.93, record=False)
+    page.text((672, 1156), "授权代表（签字）：", reg(19), fill=INK_SOFT, score=0.93, record=False)
+    page.line(300, 1182, 560, 1182, fill=RULE_LIGHT, width=1)
+    page.line(860, 1182, 1120, 1182, fill=RULE_LIGHT, width=1)
     r_sign_date = page.text(
-        (left, 1300),
+        (left, 1204),
         "签署日期：2026年10月21日",
         reg(20),
         fill=INK,
         candidates=[candidate("签署日期：2026年10月21日", "primary", 0.97)],
     )
     page.text(
-        (672, 1300),
+        (672, 1204),
         "签署日期：2026年10月21日",
         reg(20),
         fill=INK,
@@ -1014,7 +993,7 @@ def build_contract() -> tuple[Page, list[dict]]:
     )
 
     seal_a = draw_seal(
-        page, 352, 1452, 96, "杭州明远网络科技有限公司", center_text="合同专用章"
+        page, 352, 1348, 96, "杭州明远网络科技有限公司", center_text="合同专用章"
     )
     page.seal_region(
         seal_a,
@@ -1025,7 +1004,7 @@ def build_contract() -> tuple[Page, list[dict]]:
         ],
     )
     seal_b = draw_seal(
-        page, 912, 1452, 96, "南京海川信息技术有限公司", center_text="合同专用章"
+        page, 912, 1348, 96, "南京海川信息技术有限公司", center_text="合同专用章"
     )
     page.seal_region(
         seal_b,
@@ -1036,9 +1015,9 @@ def build_contract() -> tuple[Page, list[dict]]:
         ],
     )
 
-    page.line(left, 1596, right, 1596, fill=RULE_LIGHT, width=1)
+    page.line(left, 1520, right, 1520, fill=RULE_LIGHT, width=1)
     page.text(
-        (620, 1614),
+        (620, 1538),
         "第 1 页　共 2 页",
         reg(17),
         fill=INK_SOFT,
