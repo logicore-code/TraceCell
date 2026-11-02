@@ -68,6 +68,10 @@ tracecell demo      # 命令行跑完整链路
 tracecell serve     # 浏览器打开 http://127.0.0.1:8000
 ```
 
+> 镜像源不稳或者离线环境装不上构建依赖时，用
+> `pip install -e ".[web]" --no-build-isolation`——本机的 setuptools 就够了，
+> 不用再去拉一遍。
+
 回放模式跑的是**同一套策略代码**，只是把三个模型的调用换成了录制数据。
 接上真实模型只要改一个参数：
 
