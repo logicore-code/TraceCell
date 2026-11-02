@@ -182,7 +182,9 @@ def run_vlm_case(
     else:
         crop = image
         answer = vlm.review(crop, question or "请把图中的金额、日期、编号类字段逐一抄写出来，每行一个。")
-        bbox = vlm.locate(image, question or "金额")
+        # 视觉定位是可选能力：只有实现了 locate 的后端才做
+        locate = getattr(vlm, "locate", None)
+        bbox = locate(image, question or "金额") if callable(locate) else None
 
     return CaseResult(
         case="vlm",

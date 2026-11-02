@@ -170,3 +170,8 @@ class ReplayEscalator:
                 if item.get("origin") == "vlm-review":
                     return item["text"]
         return ""
+
+    def locate(self, image: bytes, description: str) -> dict[str, Any] | None:
+        """回放数据里没有定位信息。"""
+
+        return None
