@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tracecell"
+version = "0.1.0"
+description = "可追责的文档解析 Agent：用 MiniCPM-OCR 1.0 + Jev + MiniCPM-V 4.7 把 OCR 结果变成带证据的结论"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "gcw_EkTYFH3T" }]
+keywords = ["minicpm", "ocr", "agent", "mcp", "document-parsing", "openbmb"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Markup",
+]
+
+# 核心链路（账本、预算决策、路由、对账）只用标准库。
+# 下面三个依赖分别服务于：版面切分、图像裁剪、模型服务调用。
+dependencies = [
+    "numpy>=1.24",
+    "pillow>=10.0",
+    "requests>=2.28",
+]
+
+[project.optional-dependencies]
+web = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "python-multipart>=0.0.9",
+]
+dev = [
+    "pytest>=7.4",
+    "ruff>=0.3",
+]
+
+[project.scripts]
+tracecell = "tracecell.cli:main"
+
+[project.urls]
+Homepage = "https://gitcode.com/gcw_EkTYFH3T/TraceCell"
+Repository = "https://gitcode.com/gcw_EkTYFH3T/TraceCell"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+tracecell = ["web/static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]

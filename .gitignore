@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# 测试与缓存
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# 编辑器
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# 模型权重与产物（不要提交）
+*.gguf
+*.onnx
+*.safetensors
+models/
+weights/
+
+# 运行产物
+out/
+*.ledger.json
+ledger.json
+*.log

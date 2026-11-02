@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<title>TraceCell · 证据账本工作台</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234cc9f0'/%3E%3Crect x='8' y='11' width='16' height='3' rx='1' fill='%230a0e13'/%3E%3Crect x='8' y='18' width='16' height='3' rx='1' fill='%230a0e13'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ── 顶栏：品牌 / 文档选择 / 上传 / 服务状态 ───────────────────── -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-text">
+        <strong>TraceCell</strong>
+        <em>证据账本工作台</em>
+      </span>
+    </div>
+
+    <div class="topbar-tools">
+      <div class="doc-picker">
+        <label for="docSelect">当前文档</label>
+        <select id="docSelect" aria-label="选择文档"></select>
+      </div>
+      <button type="button" class="btn btn-primary" id="uploadBtn">上传图片</button>
+      <div class="health" id="healthChip" title="后端服务状态">
+        <span class="health-dot" id="healthDot"></span>
+        <span id="healthText">连接中</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── 摘要条：路由结论 + 关键数字 ──────────────────────────────── -->
+  <section class="summary" aria-label="核验摘要">
+    <div class="verdict" id="verdictBadge" data-verdict="none">
+      <span class="verdict-kicker">路由结论</span>
+      <strong class="verdict-text" id="verdictText">未载入</strong>
+      <span class="verdict-reason" id="verdictReason"></span>
+    </div>
+
+    <div class="stats" id="statTiles">
+      <div class="stat">
+        <span class="stat-label">字段数</span>
+        <b class="stat-value" id="statFields">—</b>
+      </div>
+      <div class="stat">
+        <span class="stat-label">版面区域</span>
+        <b class="stat-value" id="statRegions">—</b>
+      </div>
+      <div class="stat">
+        <span class="stat-label">平均置信度</span>
+        <b class="stat-value" id="statConfidence">—</b>
+      </div>
+      <div class="stat">
+        <span class="stat-label">期望损失</span>
+        <b class="stat-value" id="statLoss">—</b>
+        <span class="stat-note" id="statLossBand"></span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">核验成本</span>
+        <b class="stat-value" id="statCost">—</b>
+        <span class="stat-note">rcu</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">待人工复核</span>
+        <b class="stat-value" id="statHuman">—</b>
+        <span class="stat-note" id="statHumanNote"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 主布局：左文档列表 / 右内容 ─────────────────────────────── -->
+  <main class="layout">
+    <aside class="rail" id="rail">
+      <div class="rail-head">
+        <span>文档</span>
+        <span class="rail-count" id="railCount"></span>
+      </div>
+      <ul class="doc-list" id="docList"></ul>
+    </aside>
+
+    <div class="content">
+
+      <!-- 字段台账 -->
+      <section class="panel" id="ledgerPanel">
+        <header class="panel-head">
+          <h2>字段台账</h2>
+          <div class="panel-head-meta">
+            <span class="panel-count" id="ledgerCount"></span>
+            <button type="button" class="btn btn-ghost btn-sm" id="exportCsvBtn" disabled>导出 CSV</button>
+          </div>
+        </header>
+
+        <div class="table-wrap">
+          <table class="grid" id="fieldTable">
+            <thead>
+              <tr>
+                <th scope="col" class="col-name">字段名</th>
+                <th scope="col" class="col-value">字段值</th>
+                <th scope="col" class="col-conf sortable" id="confHeader" role="button" tabindex="0"
+                    aria-label="按置信度排序">置信度<span class="sort-ind" id="sortInd"></span></th>
+                <th scope="col">风险等级</th>
+                <th scope="col">状态</th>
+                <th scope="col" class="col-rid">证据区域</th>
+              </tr>
+            </thead>
+            <tbody id="fieldBody"></tbody>
+          </table>
+        </div>
+
+        <div class="empty" id="fieldEmpty" hidden>
+          <p class="empty-title" id="emptyTitle"></p>
+          <p class="empty-hint" id="emptyHint"></p>
+        </div>
+      </section>
+
+      <!-- 核验过程与成本 -->
+      <section class="panel" id="processPanel">
+        <header class="panel-head">
+          <h2>核验过程与成本</h2>
+          <div class="panel-head-meta">
+            <span class="panel-count" id="processMeta"></span>
+          </div>
+        </header>
+
+        <div class="process-grid">
+          <div class="process-col">
+            <div class="card card-wide">
+              <h3 class="card-title">决策流水</h3>
+              <div class="table-wrap">
+                <table class="grid grid-compact">
+                  <thead>
+                    <tr>
+                      <th scope="col">区域</th>
+                      <th scope="col" id="decColAction">动作</th>
+                      <th scope="col" id="decColDelta">置信度变化</th>
+                      <th scope="col">花费</th>
+                      <th scope="col">理由</th>
+                    </tr>
+                  </thead>
+                  <tbody id="decisionBody"></tbody>
+                </table>
+              </div>
+              <div class="empty empty-sm" id="decisionEmpty" hidden>
+                <p class="empty-hint">本次核验没有产生额外的动作决策，全部区域按现有证据放行。</p>
+              </div>
+            </div>
+
+            <div class="card card-wide">
+              <h3 class="card-title">问题清单</h3>
+              <div id="findingsBody"></div>
+            </div>
+          </div>
+
+          <div class="side-stack">
+            <div class="card">
+              <h3 class="card-title">成本账单</h3>
+              <div id="budgetBody"></div>
+            </div>
+
+            <div class="card">
+              <h3 class="card-title">抽样计划</h3>
+              <div id="samplingBody"></div>
+            </div>
+          </div>
+
+          <div class="card card-wide check-card">
+            <h3 class="card-title">待复核清单</h3>
+            <div class="check-list" id="checklistBody"></div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- ── 详情抽屉 ─────────────────────────────────────────────────── -->
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true" aria-label="证据详情">
+  <header class="drawer-head">
+    <div class="drawer-title">
+      <span class="drawer-kicker" id="drawerKicker">字段详情</span>
+      <h2 id="drawerTitle">—</h2>
+      <span class="drawer-sub" id="drawerSub"></span>
+    </div>
+    <button type="button" class="icon-btn" id="drawerClose" aria-label="关闭详情面板">×</button>
+  </header>
+  <div class="drawer-body" id="drawerBody"></div>
+</aside>
+
+<!-- ── 原图定位 ─────────────────────────────────────────────────── -->
+<div class="modal" id="locateModal" hidden>
+  <div class="modal-box modal-wide">
+    <header class="modal-head">
+      <div>
+        <span class="modal-kicker">原图定位</span>
+        <h2 id="locateTitle">—</h2>
+      </div>
+      <button type="button" class="icon-btn" data-close="locateModal" aria-label="关闭">×</button>
+    </header>
+    <div class="locate-stage" id="locateStage"></div>
+    <footer class="modal-foot" id="locateFoot"></footer>
+  </div>
+</div>
+
+<!-- ── 上传 ─────────────────────────────────────────────────────── -->
+<div class="modal" id="uploadModal" hidden>
+  <div class="modal-box">
+    <header class="modal-head">
+      <div>
+        <span class="modal-kicker">新建核验</span>
+        <h2>上传图片</h2>
+      </div>
+      <button type="button" class="icon-btn" data-close="uploadModal" aria-label="关闭">×</button>
+    </header>
+    <form class="upload-form" id="uploadForm">
+      <label class="field">
+        <span class="field-label">图片文件</span>
+        <input type="file" id="uploadFile" accept="image/*" required />
+      </label>
+      <label class="field">
+        <span class="field-label">单据类型</span>
+        <select id="uploadSchema">
+          <option value="invoice">增值税发票</option>
+          <option value="contract">合同</option>
+          <option value="expense">报销单</option>
+        </select>
+      </label>
+      <p class="form-hint" id="uploadHint">核验在服务端执行，完成后自动切换到该文档。</p>
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" data-close="uploadModal">取消</button>
+        <button type="submit" class="btn btn-primary" id="uploadSubmit">开始核验</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

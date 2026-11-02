@@ -1,0 +1,554 @@
+[
+  {
+    "score": 0.99,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r000:primary"
+  },
+  {
+    "score": 0.97,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r000:reparse-16x"
+  },
+  {
+    "score": 0.98,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r001:primary"
+  },
+  {
+    "score": 0.99,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r002:primary"
+  },
+  {
+    "score": 0.96,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r002:reparse-16x"
+  },
+  {
+    "score": 0.97,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r003:primary"
+  },
+  {
+    "score": 0.46,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r004:primary"
+  },
+  {
+    "score": 0.22,
+    "correct": false,
+    "category": "text",
+    "note": "invoice-001:r004:reparse-16x"
+  },
+  {
+    "score": 0.96,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r005:primary"
+  },
+  {
+    "score": 0.97,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r006:primary"
+  },
+  {
+    "score": 0.94,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r007:primary"
+  },
+  {
+    "score": 0.93,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r008:primary"
+  },
+  {
+    "score": 0.95,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r009:primary"
+  },
+  {
+    "score": 0.92,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r010:primary"
+  },
+  {
+    "score": 0.95,
+    "correct": true,
+    "category": "table",
+    "note": "invoice-001:r011:primary"
+  },
+  {
+    "score": 0.96,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r012:primary"
+  },
+  {
+    "score": 0.95,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r013:primary"
+  },
+  {
+    "score": 0.96,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r014:primary"
+  },
+  {
+    "score": 0.95,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r015:primary"
+  },
+  {
+    "score": 0.93,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r015:reparse-16x"
+  },
+  {
+    "score": 0.94,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r016:primary"
+  },
+  {
+    "score": 0.94,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r017:primary"
+  },
+  {
+    "score": 0.92,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r017:reparse-16x"
+  },
+  {
+    "score": 0.92,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r018:primary"
+  },
+  {
+    "score": 0.38,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r019:primary"
+  },
+  {
+    "score": 0.19,
+    "correct": false,
+    "category": "text",
+    "note": "invoice-001:r019:reparse-16x"
+  },
+  {
+    "score": 0.96,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r019:vlm-review"
+  },
+  {
+    "score": 0.95,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r020:primary"
+  },
+  {
+    "score": 0.98,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r021:primary"
+  },
+  {
+    "score": 0.93,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r022:primary"
+  },
+  {
+    "score": 0.92,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r023:primary"
+  },
+  {
+    "score": 0.91,
+    "correct": true,
+    "category": "text",
+    "note": "invoice-001:r024:primary"
+  },
+  {
+    "score": 0.93,
+    "correct": true,
+    "category": "seal",
+    "note": "invoice-001:r025:primary"
+  },
+  {
+    "score": 0.91,
+    "correct": true,
+    "category": "seal",
+    "note": "invoice-001:r025:reparse-16x"
+  },
+  {
+    "score": 0.99,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r000:primary"
+  },
+  {
+    "score": 0.96,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r000:reparse-16x"
+  },
+  {
+    "score": 0.98,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r001:primary"
+  },
+  {
+    "score": 0.97,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r002:primary"
+  },
+  {
+    "score": 0.96,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r003:primary"
+  },
+  {
+    "score": 0.94,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r004:primary"
+  },
+  {
+    "score": 0.97,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r005:primary"
+  },
+  {
+    "score": 0.93,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r006:primary"
+  },
+  {
+    "score": 0.96,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r007:primary"
+  },
+  {
+    "score": 0.92,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r008:primary"
+  },
+  {
+    "score": 0.98,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r009:primary"
+  },
+  {
+    "score": 0.41,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r010:primary"
+  },
+  {
+    "score": 0.24,
+    "correct": false,
+    "category": "text",
+    "note": "contract-001:r010:reparse-16x"
+  },
+  {
+    "score": 0.38,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r011:primary"
+  },
+  {
+    "score": 0.19,
+    "correct": false,
+    "category": "text",
+    "note": "contract-001:r011:reparse-16x"
+  },
+  {
+    "score": 0.96,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r012:primary"
+  },
+  {
+    "score": 0.93,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r013:primary"
+  },
+  {
+    "score": 0.97,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r014:primary"
+  },
+  {
+    "score": 0.9,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r015:primary"
+  },
+  {
+    "score": 0.96,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r016:primary"
+  },
+  {
+    "score": 0.91,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r017:primary"
+  },
+  {
+    "score": 0.95,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r018:primary"
+  },
+  {
+    "score": 0.95,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r019:primary"
+  },
+  {
+    "score": 0.93,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r020:primary"
+  },
+  {
+    "score": 0.93,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r021:primary"
+  },
+  {
+    "score": 0.97,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r022:primary"
+  },
+  {
+    "score": 0.97,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r023:primary"
+  },
+  {
+    "score": 0.93,
+    "correct": true,
+    "category": "seal",
+    "note": "contract-001:r024:primary"
+  },
+  {
+    "score": 0.92,
+    "correct": true,
+    "category": "seal",
+    "note": "contract-001:r024:reparse-16x"
+  },
+  {
+    "score": 0.92,
+    "correct": true,
+    "category": "seal",
+    "note": "contract-001:r025:primary"
+  },
+  {
+    "score": 0.9,
+    "correct": true,
+    "category": "seal",
+    "note": "contract-001:r025:reparse-16x"
+  },
+  {
+    "score": 0.93,
+    "correct": true,
+    "category": "text",
+    "note": "contract-001:r026:primary"
+  },
+  {
+    "score": 0.98,
+    "correct": true,
+    "category": "text",
+    "note": "expense-001:r000:primary"
+  },
+  {
+    "score": 0.95,
+    "correct": true,
+    "category": "text",
+    "note": "expense-001:r000:reparse-16x"
+  },
+  {
+    "score": 0.97,
+    "correct": true,
+    "category": "text",
+    "note": "expense-001:r001:primary"
+  },
+  {
+    "score": 0.95,
+    "correct": true,
+    "category": "text",
+    "note": "expense-001:r002:primary"
+  },
+  {
+    "score": 0.52,
+    "correct": true,
+    "category": "text",
+    "note": "expense-001:r003:primary"
+  },
+  {
+    "score": 0.27,
+    "correct": false,
+    "category": "text",
+    "note": "expense-001:r003:reparse-16x"
+  },
+  {
+    "score": 0.98,
+    "correct": true,
+    "category": "text",
+    "note": "expense-001:r004:primary"
+  },
+  {
+    "score": 0.93,
+    "correct": true,
+    "category": "text",
+    "note": "expense-001:r005:primary"
+  },
+  {
+    "score": 0.94,
+    "correct": true,
+    "category": "table",
+    "note": "expense-001:r006:primary"
+  },
+  {
+    "score": 0.94,
+    "correct": true,
+    "category": "table",
+    "note": "expense-001:r007:primary"
+  },
+  {
+    "score": 0.94,
+    "correct": true,
+    "category": "table",
+    "note": "expense-001:r008:primary"
+  },
+  {
+    "score": 0.92,
+    "correct": true,
+    "category": "text",
+    "note": "expense-001:r009:primary"
+  },
+  {
+    "score": 0.91,
+    "correct": true,
+    "category": "text",
+    "note": "expense-001:r010:primary"
+  },
+  {
+    "score": 0.9,
+    "correct": true,
+    "category": "text",
+    "note": "expense-001:r011:primary"
+  },
+  {
+    "score": 0.37,
+    "correct": true,
+    "category": "text",
+    "note": "expense-001:r012:primary"
+  },
+  {
+    "score": 0.19,
+    "correct": false,
+    "category": "text",
+    "note": "expense-001:r012:reparse-16x"
+  },
+  {
+    "score": 0.94,
+    "correct": true,
+    "category": "text",
+    "note": "expense-001:r013:primary"
+  },
+  {
+    "score": 0.92,
+    "correct": true,
+    "category": "text",
+    "note": "expense-001:r013:reparse-16x"
+  },
+  {
+    "score": 0.92,
+    "correct": true,
+    "category": "text",
+    "note": "expense-001:r014:primary"
+  },
+  {
+    "score": 0.9,
+    "correct": true,
+    "category": "text",
+    "note": "expense-001:r015:primary"
+  },
+  {
+    "score": 0.93,
+    "correct": true,
+    "category": "seal",
+    "note": "expense-001:r016:primary"
+  },
+  {
+    "score": 0.92,
+    "correct": true,
+    "category": "figure",
+    "note": "expense-001:r017:primary"
+  },
+  {
+    "score": 0.93,
+    "correct": true,
+    "category": "text",
+    "note": "expense-001:r018:primary"
+  },
+  {
+    "score": 0.92,
+    "correct": true,
+    "category": "text",
+    "note": "expense-001:r019:primary"
+  },
+  {
+    "score": 0.91,
+    "correct": true,
+    "category": "text",
+    "note": "expense-001:r020:primary"
+  },
+  {
+    "score": 0.91,
+    "correct": true,
+    "category": "text",
+    "note": "expense-001:r021:primary"
+  }
+]

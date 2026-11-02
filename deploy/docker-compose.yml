@@ -1,0 +1,121 @@
+# TraceCell 全离线部署：三个 MiniCPM 模型 + TraceCell 应用
+#
+# 一张 24GB 显存的卡可以同时跑起来：
+#   - MiniCPM-OCR 1.0   1.3B   解析
+#   - MiniCPM-OCR Jev   2B     评分
+#   - MiniCPM-V 4.7     35B-A3B 升级复核（每个 token 只激活 3B）
+#
+# 显存不够时优先降级顺序：
+#   1. 把 V 4.7 换成 1B 版本（--vlm-model openbmb/MiniCPM-V-4.7-1B）
+#   2. 把 V 4.7 换成 GGUF + llama.cpp 端侧部署
+#   3. 只留 OCR 1.0 + Jev，升级复核这一档退化为转人工
+
+services:
+  minicpm-ocr:
+    image: vllm/vllm-openai:latest
+    container_name: tracecell-ocr
+    command:
+      - --model=openbmb/MiniCPM-OCR-1.0
+      - --served-model-name=openbmb/MiniCPM-OCR-1.0
+      - --port=8000
+      - --trust-remote-code
+      - --limit-mm-per-prompt.image=8
+      - --gpu-memory-utilization=0.28
+    ports:
+      - "8000:8000"
+    volumes:
+      - hf-cache:/root/.cache/huggingface
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  minicpm-ocr-jev:
+    # 这个镜像由官方仓库构建，TraceCell 不重复造一遍：
+    #   git clone https://github.com/OpenBMB/MiniCPM-OCR.git
+    #   cd MiniCPM-OCR/scripts/minicpm-ocr-jev
+    #   docker build -f serve/Dockerfile -t minicpm-ocr-jev:latest .
+    # 权重目录需要挂到 /weights 下，见 docs/deployment.md
+    container_name: tracecell-jev
+    image: minicpm-ocr-jev:latest
+    ports:
+      - "8030:8030"
+    volumes:
+      - hf-cache:/root/.cache/huggingface
+      - jev-weights:/weights:ro
+    environment:
+      - HF_ENDPOINT=${HF_ENDPOINT:-https://hf-mirror.com}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8030/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  minicpm-v47:
+    image: vllm/vllm-openai:latest
+    container_name: tracecell-vlm
+    command:
+      - --model=${VLM_MODEL:-openbmb/MiniCPM-V-4.7-35B-A3B}
+      - --served-model-name=${VLM_MODEL:-openbmb/MiniCPM-V-4.7-35B-A3B}
+      - --port=8001
+      - --trust-remote-code
+      - --gpu-memory-utilization=0.36
+      - --max-model-len=32768
+    ports:
+      - "8001:8001"
+    volumes:
+      - hf-cache:/root/.cache/huggingface
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8001/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  tracecell:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.app
+    container_name: tracecell
+    ports:
+      - "8080:8080"
+    environment:
+      - TRACECELL_PROVIDER=minicpm
+      - TRACECELL_OCR_URL=http://minicpm-ocr:8000
+      - TRACECELL_JEV_URL=http://minicpm-ocr-jev:8030
+      - TRACECELL_VLM_URL=http://minicpm-v47:8001
+      - TRACECELL_OCR_MODEL=openbmb/MiniCPM-1.0
+    depends_on:
+      minicpm-ocr:
+        condition: service_healthy
+      minicpm-ocr-jev:
+        condition: service_healthy
+      minicpm-v47:
+        condition: service_healthy
+    volumes:
+      - ./samples:/app/samples:ro
+
+volumes:
+  hf-cache:
+  jev-weights:

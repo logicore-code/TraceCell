@@ -1,0 +1,1418 @@
+{
+  "documents": [
+    {
+      "doc_id": "invoice-001",
+      "source": "samples/invoice_001.png",
+      "label": "增值税专用发票",
+      "schema": "invoice",
+      "description": "价税合计的小写金额印得偏浅又偏小，识别结果拿不准；合计行的金额与税额两次识别给出不同的数字，需要人工确认。",
+      "markdown": "# 浙江增值税专用发票\n\n发票代码：251170000000\n发票号码：25117000000012345678\n\n购买方名称：杭州明远网络科技有限公司\n纳税人识别号：91330100MA2XXXXX1J\n地址、电话：杭州市西湖区文三路 398 号 6 幢 12 层\n开户行及账号：中国银行杭州文三路支行 3301010036000088\n\n销售方名称：南京海川软件股份有限公司\n纳税人识别号：91320100MA1XXXXX9K\n地址、电话：南京市建邺区江东中路 106 号 8 幢 501 室\n开户行及账号：中国银行南京建邺支行 1020001100880032\n\n货物或应税劳务、服务名称：技术开发服务*信息技术服务\n货物或应税劳务、服务名称：系统运维服务*信息技术服务\n金额 ¥128,600.00　税率 13%　税额 ¥16,718.00\n价税合计（大写）壹拾肆万伍仟叁佰壹拾捌圆整\n价税合计（小写）¥145,318.00\n\n备注：本次服务费对应合同 HT-2026-1043，账期 30 天。\n开票日期：2026年10月18日\n收款人：李敏　复核：王岚　开票人：陈涛",
+      "regions": [
+        {
+          "id": "r000",
+          "page": 1,
+          "bbox": {
+            "x0": 0.285484,
+            "y0": 0.058723,
+            "x1": 0.714516,
+            "y1": 0.088369
+          },
+          "category": "text",
+          "text": "浙江增值税专用发票",
+          "candidates": [
+            {
+              "text": "浙江增值税专用发票",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.99
+            },
+            {
+              "text": "浙江增值税专用发票",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.97
+            }
+          ]
+        },
+        {
+          "id": "r001",
+          "page": 1,
+          "bbox": {
+            "x0": 0.087903,
+            "y0": 0.111745,
+            "x1": 0.308871,
+            "y1": 0.128278
+          },
+          "category": "text",
+          "text": "发票代码：251170000000",
+          "candidates": [
+            {
+              "text": "发票代码：251170000000",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.98
+            }
+          ]
+        },
+        {
+          "id": "r002",
+          "page": 1,
+          "bbox": {
+            "x0": 0.608871,
+            "y0": 0.111745,
+            "x1": 0.912097,
+            "y1": 0.128278
+          },
+          "category": "text",
+          "text": "发票号码：25117000000012345678",
+          "candidates": [
+            {
+              "text": "发票号码：25117000000012345678",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.99
+            },
+            {
+              "text": "发票号码：25117000000012345678",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.96
+            }
+          ]
+        },
+        {
+          "id": "r003",
+          "page": 1,
+          "bbox": {
+            "x0": 0.087903,
+            "y0": 0.145952,
+            "x1": 0.354032,
+            "y1": 0.160205
+          },
+          "category": "text",
+          "text": "购买方名称：杭州明远网络科技有限公司",
+          "candidates": [
+            {
+              "text": "购买方名称：杭州明远网络科技有限公司",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.97
+            }
+          ]
+        },
+        {
+          "id": "r004",
+          "page": 1,
+          "bbox": {
+            "x0": 0.520161,
+            "y0": 0.145952,
+            "x1": 0.78629,
+            "y1": 0.160205
+          },
+          "category": "text",
+          "text": "销售方名称：南京海川软件股份有限公司",
+          "candidates": [
+            {
+              "text": "销售方名称：南京海川软件股份有限公司",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.46
+            },
+            {
+              "text": "销售方名称：南京海川软件股分有限公司",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.22
+            },
+            {
+              "text": "销售方名称：南京海川软件股分有限公同",
+              "origin": "reparse-16x",
+              "verdict": "not_scored",
+              "score": null,
+              "detail": "Jev 评分服务超时，本轮未返回分数"
+            }
+          ]
+        },
+        {
+          "id": "r005",
+          "page": 1,
+          "bbox": {
+            "x0": 0.087903,
+            "y0": 0.1813,
+            "x1": 0.345161,
+            "y1": 0.195553
+          },
+          "category": "text",
+          "text": "纳税人识别号：91330100MA2XXXXX1J",
+          "candidates": [
+            {
+              "text": "纳税人识别号：91330100MA2XXXXX1J",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.96
+            }
+          ]
+        },
+        {
+          "id": "r006",
+          "page": 1,
+          "bbox": {
+            "x0": 0.520161,
+            "y0": 0.1813,
+            "x1": 0.779032,
+            "y1": 0.195553
+          },
+          "category": "text",
+          "text": "纳税人识别号：91320100MA1XXXXX9K",
+          "candidates": [
+            {
+              "text": "纳税人识别号：91320100MA1XXXXX9K",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.97
+            }
+          ]
+        },
+        {
+          "id": "r007",
+          "page": 1,
+          "bbox": {
+            "x0": 0.520161,
+            "y0": 0.216648,
+            "x1": 0.876613,
+            "y1": 0.230901
+          },
+          "category": "text",
+          "text": "地址、电话：南京市建邺区江东中路 106 号 8 幢 501 室",
+          "candidates": [
+            {
+              "text": "地址、电话：南京市建邺区江东中路 106 号 8 幢 501 室",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.93
+            }
+          ]
+        },
+        {
+          "id": "r008",
+          "page": 1,
+          "bbox": {
+            "x0": 0.520161,
+            "y0": 0.251995,
+            "x1": 0.904032,
+            "y1": 0.266249
+          },
+          "category": "text",
+          "text": "开户行及账号：中国银行南京建邺支行 1020001100880032",
+          "candidates": [
+            {
+              "text": "开户行及账号：中国银行南京建邺支行 1020001100880032",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.92
+            }
+          ]
+        },
+        {
+          "id": "r009",
+          "page": 1,
+          "bbox": {
+            "x0": 0.092742,
+            "y0": 0.332953,
+            "x1": 0.905645,
+            "y1": 0.347777
+          },
+          "category": "table",
+          "text": "技术开发服务*信息技术服务　—　项　1　86,000.00　¥86,000.00　13%　¥11,180.00",
+          "candidates": [
+            {
+              "text": "技术开发服务*信息技术服务　—　项　1　86,000.00　¥86,000.00　13%　¥11,180.00",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.96
+            }
+          ]
+        },
+        {
+          "id": "r010",
+          "page": 1,
+          "bbox": {
+            "x0": 0.092742,
+            "y0": 0.377423,
+            "x1": 0.905645,
+            "y1": 0.392246
+          },
+          "category": "table",
+          "text": "系统运维服务*信息技术服务　—　项　1　42,600.00　¥42,600.00　13%　¥5,538.00",
+          "candidates": [
+            {
+              "text": "系统运维服务*信息技术服务　—　项　1　42,600.00　¥42,600.00　13%　¥5,538.00",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.95
+            }
+          ]
+        },
+        {
+          "id": "r011",
+          "page": 1,
+          "bbox": {
+            "x0": 0.589516,
+            "y0": 0.421893,
+            "x1": 0.700806,
+            "y1": 0.436146
+          },
+          "category": "text",
+          "text": "金额 ¥128,600.00",
+          "candidates": [
+            {
+              "text": "金额 ¥128,600.00",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.95
+            },
+            {
+              "text": "金额 ¥128,600.00",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.93
+            }
+          ]
+        },
+        {
+          "id": "r012",
+          "page": 1,
+          "bbox": {
+            "x0": 0.803226,
+            "y0": 0.421893,
+            "x1": 0.907258,
+            "y1": 0.436146
+          },
+          "category": "text",
+          "text": "税额 ¥16,718.00",
+          "candidates": [
+            {
+              "text": "税额 ¥16,718.00",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.94
+            },
+            {
+              "text": "税额 ¥16,718.00",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.92
+            }
+          ]
+        },
+        {
+          "id": "r013",
+          "page": 1,
+          "bbox": {
+            "x0": 0.100806,
+            "y0": 0.467503,
+            "x1": 0.512097,
+            "y1": 0.484607
+          },
+          "category": "text",
+          "text": "价税合计（大写）壹拾肆万伍仟叁佰壹拾捌圆整",
+          "candidates": [
+            {
+              "text": "价税合计（大写）壹拾肆万伍仟叁佰壹拾捌圆整",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.92
+            }
+          ]
+        },
+        {
+          "id": "r014",
+          "page": 1,
+          "bbox": {
+            "x0": 0.100806,
+            "y0": 0.496009,
+            "x1": 0.35,
+            "y1": 0.513113
+          },
+          "category": "text",
+          "text": "价税合计（小写）¥145,318.00",
+          "candidates": [
+            {
+              "text": "价税合计（小写）¥145,318.00",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.53
+            },
+            {
+              "text": "价税合计（小写）¥145,818.00",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.19
+            },
+            {
+              "text": "价税合计（小写）¥145,318.00",
+              "origin": "vlm-review",
+              "verdict": "scored",
+              "score": 0.96
+            },
+            {
+              "text": "价税合计（小写）¥145,318.OO",
+              "origin": "reparse-16x",
+              "verdict": "not_scored",
+              "score": null,
+              "detail": "Jev 评分服务超时，本轮未返回分数"
+            }
+          ]
+        },
+        {
+          "id": "r015",
+          "page": 1,
+          "bbox": {
+            "x0": 0.100806,
+            "y0": 0.558153,
+            "x1": 0.491129,
+            "y1": 0.572976
+          },
+          "category": "text",
+          "text": "备注：本次服务费对应合同 HT-2026-1043，账期 30 天。",
+          "candidates": [
+            {
+              "text": "备注：本次服务费对应合同 HT-2026-1043，账期 30 天。",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.95
+            },
+            {
+              "text": "备注：本次服务费对应合同 HT-2026-1043，账期为 30 天。",
+              "origin": "reparse-16x",
+              "verdict": "failed",
+              "score": null,
+              "detail": "Jev 渲染分块失败，未产出分数"
+            }
+          ]
+        },
+        {
+          "id": "r016",
+          "page": 1,
+          "bbox": {
+            "x0": 0.100806,
+            "y0": 0.63626,
+            "x1": 0.316129,
+            "y1": 0.651653
+          },
+          "category": "text",
+          "text": "开票日期：2026年10月18日",
+          "candidates": [
+            {
+              "text": "开票日期：2026年10月18日",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.98
+            }
+          ]
+        },
+        {
+          "id": "r017",
+          "page": 1,
+          "bbox": {
+            "x0": 0.66129,
+            "y0": 0.72634,
+            "x1": 0.864516,
+            "y1": 0.870011
+          },
+          "category": "seal",
+          "text": "南京海川软件股份有限公司 发票专用章",
+          "candidates": [
+            {
+              "text": "南京海川软件股份有限公司 发票专用章",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.93
+            },
+            {
+              "text": "南京海川软件股份有限公司 发票专用章",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.91
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "name": "发票号码",
+          "value": "25117000000012345678",
+          "region_ids": [
+            "r002"
+          ]
+        },
+        {
+          "name": "发票代码",
+          "value": "251170000000",
+          "region_ids": [
+            "r001"
+          ]
+        },
+        {
+          "name": "开票日期",
+          "value": "2026年10月18日",
+          "region_ids": [
+            "r016"
+          ]
+        },
+        {
+          "name": "购买方名称",
+          "value": "杭州明远网络科技有限公司",
+          "region_ids": [
+            "r003"
+          ]
+        },
+        {
+          "name": "销售方名称",
+          "value": "南京海川软件股份有限公司",
+          "region_ids": [
+            "r004"
+          ]
+        },
+        {
+          "name": "纳税人识别号",
+          "value": "91330100MA2XXXXX1J",
+          "region_ids": [
+            "r005"
+          ]
+        },
+        {
+          "name": "金额",
+          "value": "128,600.00",
+          "region_ids": [
+            "r011"
+          ]
+        },
+        {
+          "name": "税额",
+          "value": "16,718.00",
+          "region_ids": [
+            "r012"
+          ]
+        },
+        {
+          "name": "价税合计",
+          "value": "145,318.00",
+          "region_ids": [
+            "r014"
+          ]
+        }
+      ]
+    },
+    {
+      "doc_id": "contract-001",
+      "source": "samples/contract_001.png",
+      "label": "技术服务合同",
+      "schema": "contract",
+      "description": "合同金额的大小写两处都印得偏淡，识别结果互相打架；乙方名称与发票上的销售方名称对不上，属于跨文档矛盾。",
+      "markdown": "# 技术开发与运维服务合同\n\n合同编号：HT-2026-1043\n\n甲方：杭州明远网络科技有限公司\n乙方：南京海川信息技术有限公司\n\n第一条 服务内容\n乙方为甲方提供订单中心与结算系统的定制开发服务，包括需求调研、系统设计、\n编码实现、联调测试与上线支持；并在验收合格后提供为期十二个月的运行维护\n服务，含系统巡检、故障响应与版本升级。\n\n第二条 服务期限与交付\n服务期自 2026年11月01日 起至 2027年10月31日 止。乙方应于服务期起始后四十五\n日内完成首期交付，并提交阶段验收报告。\n\n第三条 合同金额\n合同金额（大写）：伍拾捌万元整\n合同金额：¥580,000.00\n\n第四条 付款方式与期限\n付款期限：合同签订后 30 日内支付合同金额的 40%，验收合格之日起 60 日内支付余款 60%。\n甲方付款以乙方开具等额增值税专用发票为前提。\n\n第五条 违约责任\n任何一方违反本合同约定，应向守约方支付相当于合同金额 5% 的违约金；违约金\n不足以弥补守约方损失的，还应赔偿差额。\n\n第六条 其他约定\n本合同一式肆份，甲乙双方各执贰份，具有同等法律效力。未尽事宜，由双方另行\n协商并签订补充协议。\n\n甲方（盖章）：杭州明远网络科技有限公司\n乙方（盖章）：南京海川信息技术有限公司\n签署日期：2026年10月21日",
+      "regions": [
+        {
+          "id": "r000",
+          "page": 1,
+          "bbox": {
+            "x0": 0.280645,
+            "y0": 0.057583,
+            "x1": 0.719355,
+            "y1": 0.082668
+          },
+          "category": "text",
+          "text": "技术开发与运维服务合同",
+          "candidates": [
+            {
+              "text": "技术开发与运维服务合同",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.99
+            },
+            {
+              "text": "技术开发与运维服务合同",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.96
+            }
+          ]
+        },
+        {
+          "id": "r001",
+          "page": 1,
+          "bbox": {
+            "x0": 0.723387,
+            "y0": 0.100912,
+            "x1": 0.912097,
+            "y1": 0.115735
+          },
+          "category": "text",
+          "text": "合同编号：HT-2026-1043",
+          "candidates": [
+            {
+              "text": "合同编号：HT-2026-1043",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.98
+            }
+          ]
+        },
+        {
+          "id": "r002",
+          "page": 1,
+          "bbox": {
+            "x0": 0.087903,
+            "y0": 0.13797,
+            "x1": 0.346774,
+            "y1": 0.153364
+          },
+          "category": "text",
+          "text": "甲方：杭州明远网络科技有限公司",
+          "candidates": [
+            {
+              "text": "甲方：杭州明远网络科技有限公司",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.97
+            }
+          ]
+        },
+        {
+          "id": "r003",
+          "page": 1,
+          "bbox": {
+            "x0": 0.087903,
+            "y0": 0.160775,
+            "x1": 0.346774,
+            "y1": 0.176169
+          },
+          "category": "text",
+          "text": "乙方：南京海川信息技术有限公司",
+          "candidates": [
+            {
+              "text": "乙方：南京海川信息技术有限公司",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.96
+            }
+          ]
+        },
+        {
+          "id": "r004",
+          "page": 1,
+          "bbox": {
+            "x0": 0.087903,
+            "y0": 0.244014,
+            "x1": 0.228226,
+            "y1": 0.259977
+          },
+          "category": "text",
+          "text": "第一条　服务内容",
+          "candidates": [
+            {
+              "text": "第一条　服务内容",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.97
+            }
+          ]
+        },
+        {
+          "id": "r005",
+          "page": 1,
+          "bbox": {
+            "x0": 0.087903,
+            "y0": 0.265678,
+            "x1": 0.615323,
+            "y1": 0.315849
+          },
+          "category": "text",
+          "text": "乙方为甲方提供订单中心与结算系统的定制开发服务，包括需求调研、系统设计、\n编码实现、联调测试与上线支持；并在验收合格后提供为期十二个月的运行维护\n服务，含系统巡检、故障响应与版本升级。",
+          "candidates": [
+            {
+              "text": "乙方为甲方提供订单中心与结算系统的定制开发服务，包括需求调研、系统设计、\n编码实现、联调测试与上线支持；并在验收合格后提供为期十二个月的运行维护\n服务，含系统巡检、故障响应与版本升级。",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.93
+            }
+          ]
+        },
+        {
+          "id": "r006",
+          "page": 1,
+          "bbox": {
+            "x0": 0.087903,
+            "y0": 0.337514,
+            "x1": 0.279032,
+            "y1": 0.353478
+          },
+          "category": "text",
+          "text": "第二条　服务期限与交付",
+          "candidates": [
+            {
+              "text": "第二条　服务期限与交付",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.96
+            }
+          ]
+        },
+        {
+          "id": "r007",
+          "page": 1,
+          "bbox": {
+            "x0": 0.087903,
+            "y0": 0.359179,
+            "x1": 0.626613,
+            "y1": 0.391676
+          },
+          "category": "text",
+          "text": "服务期自 2026年11月01日 起至 2027年10月31日 止。乙方应于服务期起始后四十五\n日内完成首期交付，并提交阶段验收报告。",
+          "candidates": [
+            {
+              "text": "服务期自 2026年11月01日 起至 2027年10月31日 止。乙方应于服务期起始后四十五\n日内完成首期交付，并提交阶段验收报告。",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.92
+            }
+          ]
+        },
+        {
+          "id": "r008",
+          "page": 1,
+          "bbox": {
+            "x0": 0.087903,
+            "y0": 0.40821,
+            "x1": 0.228226,
+            "y1": 0.424173
+          },
+          "category": "text",
+          "text": "第三条　合同金额",
+          "candidates": [
+            {
+              "text": "第三条　合同金额",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.98
+            }
+          ]
+        },
+        {
+          "id": "r009",
+          "page": 1,
+          "bbox": {
+            "x0": 0.087903,
+            "y0": 0.429875,
+            "x1": 0.310484,
+            "y1": 0.444128
+          },
+          "category": "text",
+          "text": "合同金额（大写）：伍拾捌万元整",
+          "candidates": [
+            {
+              "text": "合同金额（大写）：伍拾捌万圆整",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.24
+            },
+            {
+              "text": "合同金额（大写）：伍拾捌万元整",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.41
+            },
+            {
+              "text": "合同金额（大写）：伍拾捌万圆整。",
+              "origin": "reparse-16x",
+              "verdict": "not_scored",
+              "score": null,
+              "detail": "Jev 评分服务超时，本轮未返回分数"
+            }
+          ]
+        },
+        {
+          "id": "r010",
+          "page": 1,
+          "bbox": {
+            "x0": 0.087903,
+            "y0": 0.452109,
+            "x1": 0.262903,
+            "y1": 0.468073
+          },
+          "category": "text",
+          "text": "合同金额：¥580,000.00",
+          "candidates": [
+            {
+              "text": "合同金额：¥580,000.00",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.38
+            },
+            {
+              "text": "合同金额：¥580,800.00",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.19
+            },
+            {
+              "text": "合同金额：¥580,000.OO",
+              "origin": "reparse-16x",
+              "verdict": "not_scored",
+              "score": null,
+              "detail": "Jev 评分服务超时，本轮未返回分数"
+            }
+          ]
+        },
+        {
+          "id": "r011",
+          "page": 1,
+          "bbox": {
+            "x0": 0.087903,
+            "y0": 0.488027,
+            "x1": 0.279032,
+            "y1": 0.503991
+          },
+          "category": "text",
+          "text": "第四条　付款方式与期限",
+          "candidates": [
+            {
+              "text": "第四条　付款方式与期限",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.96
+            }
+          ]
+        },
+        {
+          "id": "r012",
+          "page": 1,
+          "bbox": {
+            "x0": 0.087903,
+            "y0": 0.509692,
+            "x1": 0.696774,
+            "y1": 0.542189
+          },
+          "category": "text",
+          "text": "付款期限：合同签订后 30 日内支付合同金额的 40%，验收合格之日起 60 日内支付余款 60%。\n甲方付款以乙方开具等额增值税专用发票为前提。",
+          "candidates": [
+            {
+              "text": "付款期限：合同签订后 30 日内支付合同金额的 40%，验收合格之日起 60 日内支付余款 60%。\n甲方付款以乙方开具等额增值税专用发票为前提。",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.93
+            }
+          ]
+        },
+        {
+          "id": "r013",
+          "page": 1,
+          "bbox": {
+            "x0": 0.087903,
+            "y0": 0.689282,
+            "x1": 0.399194,
+            "y1": 0.704105
+          },
+          "category": "text",
+          "text": "甲方（盖章）：杭州明远网络科技有限公司",
+          "candidates": [
+            {
+              "text": "甲方（盖章）：杭州明远网络科技有限公司",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.95
+            }
+          ]
+        },
+        {
+          "id": "r014",
+          "page": 1,
+          "bbox": {
+            "x0": 0.539516,
+            "y0": 0.689282,
+            "x1": 0.850806,
+            "y1": 0.704105
+          },
+          "category": "text",
+          "text": "乙方（盖章）：南京海川信息技术有限公司",
+          "candidates": [
+            {
+              "text": "乙方（盖章）：南京海川信息技术有限公司",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.95
+            }
+          ]
+        },
+        {
+          "id": "r015",
+          "page": 1,
+          "bbox": {
+            "x0": 0.087903,
+            "y0": 0.742873,
+            "x1": 0.293548,
+            "y1": 0.757697
+          },
+          "category": "text",
+          "text": "签署日期：2026年10月21日",
+          "candidates": [
+            {
+              "text": "签署日期：2026年10月21日",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.97
+            }
+          ]
+        },
+        {
+          "id": "r016",
+          "page": 1,
+          "bbox": {
+            "x0": 0.539516,
+            "y0": 0.742873,
+            "x1": 0.745161,
+            "y1": 0.757697
+          },
+          "category": "text",
+          "text": "签署日期：2026年10月21日",
+          "candidates": [
+            {
+              "text": "签署日期：2026年10月21日",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.97
+            }
+          ]
+        },
+        {
+          "id": "r017",
+          "page": 1,
+          "bbox": {
+            "x0": 0.206452,
+            "y0": 0.77309,
+            "x1": 0.36129,
+            "y1": 0.882554
+          },
+          "category": "seal",
+          "text": "杭州明远网络科技有限公司 合同专用章",
+          "candidates": [
+            {
+              "text": "杭州明远网络科技有限公司 合同专用章",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.93
+            },
+            {
+              "text": "杭州明远网络科技有限公司 合同专用章",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.92
+            }
+          ]
+        },
+        {
+          "id": "r018",
+          "page": 1,
+          "bbox": {
+            "x0": 0.658065,
+            "y0": 0.77309,
+            "x1": 0.812903,
+            "y1": 0.882554
+          },
+          "category": "seal",
+          "text": "南京海川信息技术有限公司 合同专用章",
+          "candidates": [
+            {
+              "text": "南京海川信息技术有限公司 合同专用章",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.92
+            },
+            {
+              "text": "南京海川信息技术有限公司 合同专用章",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.9
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "name": "合同编号",
+          "value": "HT-2026-1043",
+          "region_ids": [
+            "r001"
+          ]
+        },
+        {
+          "name": "甲方",
+          "value": "杭州明远网络科技有限公司",
+          "region_ids": [
+            "r002"
+          ]
+        },
+        {
+          "name": "乙方",
+          "value": "南京海川信息技术有限公司",
+          "region_ids": [
+            "r003"
+          ]
+        },
+        {
+          "name": "合同金额",
+          "value": "580,000.00",
+          "region_ids": [
+            "r010"
+          ]
+        },
+        {
+          "name": "付款期限",
+          "value": "合同签订后 30 日内支付合同金额的 40%，验收合格之日起 60 日内支付余款 60%。",
+          "region_ids": [
+            "r012"
+          ]
+        },
+        {
+          "name": "签署日期",
+          "value": "2026年10月21日",
+          "region_ids": [
+            "r015"
+          ]
+        }
+      ]
+    },
+    {
+      "doc_id": "expense-001",
+      "source": "samples/expense_001.png",
+      "label": "员工报销单",
+      "schema": "expense",
+      "description": "手机翻拍，纸面有噪点与光照不均；手写签名和审批意见识别不稳；单据上的合计金额与三条明细的实际之和差了一百元。",
+      "markdown": "# 费用报销单\n\n单据号：BX-20261025-007\n报销人：李思远\n所属部门：平台研发部\n日期：2026年10月25日\n\n费用类型：差旅费、办公用品、业务招待费\n差旅费　杭州至南京项目现场实施差旅　1,480.00\n办公用品　研发团队耗材采购　386.50\n业务招待费　客户现场沟通餐费　1,098.00\n合计金额：¥2,864.50\n\n审批意见：同意报销，请补充差旅报销明细。",
+      "regions": [
+        {
+          "id": "r000",
+          "page": 1,
+          "bbox": {
+            "x0": 0.382427,
+            "y0": 0.106593,
+            "x1": 0.600725,
+            "y1": 0.135234
+          },
+          "category": "text",
+          "text": "费用报销单",
+          "candidates": [
+            {
+              "text": "费用报销单",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.98
+            },
+            {
+              "text": "费用报销单",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.95
+            }
+          ]
+        },
+        {
+          "id": "r001",
+          "page": 1,
+          "bbox": {
+            "x0": 0.080696,
+            "y0": 0.175624,
+            "x1": 0.289077,
+            "y1": 0.193326
+          },
+          "category": "text",
+          "text": "单据号：BX-20261025-007",
+          "candidates": [
+            {
+              "text": "单据号：BX-20261025-007",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.97
+            }
+          ]
+        },
+        {
+          "id": "r002",
+          "page": 1,
+          "bbox": {
+            "x0": 0.474196,
+            "y0": 0.17163,
+            "x1": 0.648722,
+            "y1": 0.189526
+          },
+          "category": "text",
+          "text": "所属部门：平台研发部",
+          "candidates": [
+            {
+              "text": "所属部门：平台研发部",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.95
+            }
+          ]
+        },
+        {
+          "id": "r003",
+          "page": 1,
+          "bbox": {
+            "x0": 0.08124,
+            "y0": 0.200727,
+            "x1": 0.236681,
+            "y1": 0.23038
+          },
+          "category": "text",
+          "text": "报销人：李思远",
+          "candidates": [
+            {
+              "text": "报销人：李思远",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.52
+            },
+            {
+              "text": "报销人：李思源",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.27
+            },
+            {
+              "text": "报销人：李思沅",
+              "origin": "reparse-16x",
+              "verdict": "not_scored",
+              "score": null,
+              "detail": "Jev 评分服务超时，本轮未返回分数"
+            }
+          ]
+        },
+        {
+          "id": "r004",
+          "page": 1,
+          "bbox": {
+            "x0": 0.474854,
+            "y0": 0.201192,
+            "x1": 0.656626,
+            "y1": 0.218599
+          },
+          "category": "text",
+          "text": "日期：2026年10月25日",
+          "candidates": [
+            {
+              "text": "日期：2026年10月25日",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.98
+            }
+          ]
+        },
+        {
+          "id": "r005",
+          "page": 1,
+          "bbox": {
+            "x0": 0.082216,
+            "y0": 0.242714,
+            "x1": 0.40913,
+            "y1": 0.261733
+          },
+          "category": "text",
+          "text": "费用类型：差旅费、办公用品、业务招待费",
+          "candidates": [
+            {
+              "text": "费用类型：差旅费、办公用品、业务招待费",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.93
+            }
+          ]
+        },
+        {
+          "id": "r006",
+          "page": 1,
+          "bbox": {
+            "x0": 0.09942,
+            "y0": 0.293882,
+            "x1": 0.16587,
+            "y1": 0.309438
+          },
+          "category": "table",
+          "text": "费用类型",
+          "candidates": [
+            {
+              "text": "费用类型",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.94
+            }
+          ]
+        },
+        {
+          "id": "r007",
+          "page": 1,
+          "bbox": {
+            "x0": 0.305846,
+            "y0": 0.285733,
+            "x1": 0.89965,
+            "y1": 0.307146
+          },
+          "category": "table",
+          "text": "说明　金额",
+          "candidates": [
+            {
+              "text": "说明　金额",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.94
+            }
+          ]
+        },
+        {
+          "id": "r008",
+          "page": 1,
+          "bbox": {
+            "x0": 0.097132,
+            "y0": 0.327917,
+            "x1": 0.9006,
+            "y1": 0.352228
+          },
+          "category": "table",
+          "text": "差旅费　杭州至南京项目现场实施差旅　1,480.00",
+          "candidates": [
+            {
+              "text": "差旅费　杭州至南京项目现场实施差旅　1,480.00",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.92
+            }
+          ]
+        },
+        {
+          "id": "r009",
+          "page": 1,
+          "bbox": {
+            "x0": 0.09817,
+            "y0": 0.374662,
+            "x1": 0.901614,
+            "y1": 0.397832
+          },
+          "category": "table",
+          "text": "办公用品　研发团队耗材采购　386.50",
+          "candidates": [
+            {
+              "text": "办公用品　研发团队耗材采购　386.50",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.91
+            }
+          ]
+        },
+        {
+          "id": "r010",
+          "page": 1,
+          "bbox": {
+            "x0": 0.099209,
+            "y0": 0.421406,
+            "x1": 0.902678,
+            "y1": 0.445717
+          },
+          "category": "table",
+          "text": "业务招待费　客户现场沟通餐费　1,098.00",
+          "candidates": [
+            {
+              "text": "业务招待费　客户现场沟通餐费　1,098.00",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.9
+            }
+          ]
+        },
+        {
+          "id": "r011",
+          "page": 1,
+          "bbox": {
+            "x0": 0.087637,
+            "y0": 0.488578,
+            "x1": 0.245218,
+            "y1": 0.505716
+          },
+          "category": "text",
+          "text": "合计金额：¥2,864.50",
+          "candidates": [
+            {
+              "text": "合计金额：¥2,864.50",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.37
+            },
+            {
+              "text": "合计金额：¥2,964.50",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.19
+            },
+            {
+              "text": "合计金额：¥2,864.5O",
+              "origin": "reparse-16x",
+              "verdict": "not_scored",
+              "score": null,
+              "detail": "Jev 评分服务超时，本轮未返回分数"
+            }
+          ]
+        },
+        {
+          "id": "r012",
+          "page": 1,
+          "bbox": {
+            "x0": 0.088853,
+            "y0": 0.540384,
+            "x1": 0.509571,
+            "y1": 0.572413
+          },
+          "category": "text",
+          "text": "审批意见：同意报销，请补充差旅报销明细。",
+          "candidates": [
+            {
+              "text": "审批意见：同意报销，请补充差旅报销明细。",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.94
+            },
+            {
+              "text": "审批意见：同意报销，请补充差旅报销明细。",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.92
+            }
+          ]
+        },
+        {
+          "id": "r013",
+          "page": 1,
+          "bbox": {
+            "x0": 0.08958,
+            "y0": 0.612943,
+            "x1": 0.188588,
+            "y1": 0.642538
+          },
+          "category": "text",
+          "text": "李思远",
+          "candidates": [
+            {
+              "text": "李思远",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.92
+            }
+          ]
+        },
+        {
+          "id": "r014",
+          "page": 1,
+          "bbox": {
+            "x0": 0.542281,
+            "y0": 0.585224,
+            "x1": 0.785656,
+            "y1": 0.654037
+          },
+          "category": "seal",
+          "text": "同意报销",
+          "candidates": [
+            {
+              "text": "同意报销",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.93
+            }
+          ]
+        },
+        {
+          "id": "r015",
+          "page": 1,
+          "bbox": {
+            "x0": 0.094414,
+            "y0": 0.677298,
+            "x1": 0.917139,
+            "y1": 0.842592
+          },
+          "category": "figure",
+          "text": "费用凭证粘贴区",
+          "candidates": [
+            {
+              "text": "费用凭证粘贴区",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.92
+            }
+          ]
+        },
+        {
+          "id": "r016",
+          "page": 1,
+          "bbox": {
+            "x0": 0.102841,
+            "y0": 0.876925,
+            "x1": 0.754703,
+            "y1": 0.898983
+          },
+          "category": "text",
+          "text": "部门负责人：周　立　财务审核：陈　涛　出纳：孙　敏",
+          "candidates": [
+            {
+              "text": "部门负责人：周　立　财务审核：陈　涛　出纳：孙　敏",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.92
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "name": "单据号",
+          "value": "BX-20261025-007",
+          "region_ids": [
+            "r001"
+          ]
+        },
+        {
+          "name": "报销人",
+          "value": "李思远",
+          "region_ids": [
+            "r003"
+          ]
+        },
+        {
+          "name": "部门",
+          "value": "平台研发部",
+          "region_ids": [
+            "r002"
+          ]
+        },
+        {
+          "name": "费用类型",
+          "value": "差旅费、办公用品、业务招待费",
+          "region_ids": [
+            "r005"
+          ]
+        },
+        {
+          "name": "金额",
+          "value": "2,864.50",
+          "region_ids": [
+            "r011"
+          ]
+        },
+        {
+          "name": "日期",
+          "value": "2026年10月25日",
+          "region_ids": [
+            "r004"
+          ]
+        }
+      ]
+    }
+  ]
+}
