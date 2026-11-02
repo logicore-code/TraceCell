@@ -170,6 +170,43 @@ def _extract_number(value: str) -> float | None:
 
 
 # ---------------------------------------------------------------------------
+# 勾稽关系
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class SumRule:
+    """单据内部的加总关系。
+
+    明细行加起来应该等于合计。识别得再准也发现不了这类矛盾——两边都读对了，
+    错的是单据本身，只能靠跨字段校验。
+
+    components 用前缀匹配明细字段名，"明细" 可以匹配 "明细:差旅费"、
+    "明细:办公用品" 这些由 LineItemExtractor 抽出来的字段。
+    """
+
+    total: str
+    components: list[str]
+    tolerance: float = 0.01
+
+    def matches(self, field_name: str) -> bool:
+        return any(field_name.startswith(prefix) for prefix in self.components)
+
+
+# 按单据类型声明的勾稽关系
+DEFAULT_SUM_RULES: dict[str, SumRule] = {
+    "expense": SumRule(total="金额", components=["明细"]),
+    "invoice": SumRule(total="价税合计", components=["金额", "税额"]),
+}
+
+
+def sum_rule_for(schema_name: str) -> SumRule | None:
+    """取某个单据类型的勾稽规则，没有就返回 None。"""
+
+    return DEFAULT_SUM_RULES.get(schema_name)
+
+
+# ---------------------------------------------------------------------------
 # 成本模型
 # ---------------------------------------------------------------------------
 

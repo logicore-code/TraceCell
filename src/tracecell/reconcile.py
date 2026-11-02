@@ -15,6 +15,7 @@ TraceCell 把对账放在证据层：矛盾项同样带着两侧的坐标和候�
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from decimal import Decimal
 from typing import Any
 
 from .textnorm import (
@@ -173,6 +174,53 @@ def _conflict_note(kind: str, normalized: list[tuple[Any, Any, str]]) -> str:
     if kind == "entity":
         return f"主体名称不一致（{doc_ids}）"
     return f"取值不一致（{doc_ids}）"
+
+
+def check_sum_consistency(fields: list[FieldValue], rule) -> list[Finding]:
+    """单据内部的加总校验：明细加起来等于不等于合计。
+
+    这类矛盾是 OCR 质量模型管不了的——明细行和合计行都识别正确，错的是
+    单据本身。两边读数之间的不一致，只有做加总校验才能发现。
+    """
+
+    if rule is None:
+        return []
+    total_field = next((f for f in fields if f.name == rule.total), None)
+    if total_field is None:
+        return []
+    components = [f for f in fields if rule.matches(f.name)]
+    if len(components) < 2:
+        return []
+
+    total_value = normalize_money(total_field.value)
+    if total_value is None:
+        return []
+    amounts = []
+    for component in components:
+        amount = normalize_money(component.value)
+        if amount is None:
+            return []
+        amounts.append(Decimal(amount))
+
+    difference = sum(amounts) - Decimal(total_value)
+    if abs(difference) <= Decimal(str(rule.tolerance)):
+        return []
+
+    detail = "、".join(f"{c.name.split(':')[-1]} {c.value}" for c in components)
+    return [
+        Finding(
+            kind="sum_mismatch",
+            severity=Severity.CRITICAL,
+            message=(
+                f"明细加总 {sum(amounts):.2f} 与「{rule.total}」{total_value} 不一致，"
+                f"差额 {difference:+.2f}（明细：{detail}）"
+            ),
+            region_ids=[rid for c in components for rid in c.region_ids]
+            + list(total_field.region_ids),
+            field_names=[c.name for c in components] + [total_field.name],
+            suggestion="核对明细行与合计，确认是单据笔误还是识别错误",
+        )
+    ]
 
 
 def findings_from_reconciliation(result: ReconciliationResult) -> list[Finding]:

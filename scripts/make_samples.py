@@ -576,7 +576,7 @@ def build_invoice() -> tuple[Page, list[dict]]:
         y = 254 + index * 62
         text, score = buyer[index]
         region = page.text(
-            (left + 2, y), text, reg(18), fill=INK, score=score, record=index < 2
+            (left + 2, y), text, reg(18), fill=INK, score=score, record=index < 3
         )
         if index == 0:
             r_buyer_name = region
@@ -585,7 +585,9 @@ def build_invoice() -> tuple[Page, list[dict]]:
         text, score_or_cands = seller[index]
         cands = score_or_cands if isinstance(score_or_cands, list) else None
         score = score_or_cands if not isinstance(score_or_cands, list) else None
-        region = page.text((648, y), text, reg(18), fill=INK, candidates=cands, score=score)
+        region = page.text(
+            (648, y), text, reg(18), fill=INK, candidates=cands, score=score, record=index < 3
+        )
         if index == 0:
             r_seller_name = region
     page.line(left, 520, right, 520, fill=RULE, width=1)

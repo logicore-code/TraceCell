@@ -23,9 +23,9 @@ from typing import Any, Callable
 
 from ..budget import BudgetPlanner, CellState
 from ..budget import Decision as PlanDecision
-from ..extractors import RegexFieldExtractor, schema_by_name
+from ..extractors import RegexFieldExtractor, build_extractor, schema_by_name
 from ..ledger import build_ledger, collect_findings
-from ..policy import BudgetPolicy, RiskPolicy
+from ..policy import BudgetPolicy, RiskPolicy, sum_rule_for
 from ..providers import layout as layout_mod
 from ..providers.base import (
     PROFILE_ALT,
@@ -38,6 +38,7 @@ from ..providers.base import (
 )
 from ..providers.vlm import build_review_question
 from ..risk import region_confidence
+from ..reconcile import check_sum_consistency
 from ..routing import route_document
 from ..types import (
     BudgetReport,
@@ -92,7 +93,8 @@ class VerificationLoop:
         self.escalator = escalator
         self.policy = policy or BudgetPolicy()
         self.risk_policy = risk_policy or RiskPolicy()
-        self.extractor = extractor or RegexFieldExtractor(schema_by_name(schema))
+        self.schema = schema
+        self.extractor = extractor or build_extractor(schema)
         self.alt_profile = alt_profile
         self.planner = BudgetPlanner(self.policy)
         self._rounds: dict[str, int] = {}
@@ -193,6 +195,17 @@ class VerificationLoop:
         # 7) 账单与问题清单
         ledger.budget = self._budget_report(regions, routing)
         ledger.findings = collect_findings(ledger.fields, region_map, self.policy)
+
+        # 8) 单据内部的勾稽校验：明细加起来等于不等于合计
+        rule = sum_rule_for(self.schema)
+        sum_findings = check_sum_consistency(ledger.fields, rule)
+        if sum_findings:
+            ledger.findings.extend(sum_findings)
+            ledger.meta["sum_check"] = {
+                "total": rule.total,
+                "components": rule.components,
+                "status": "mismatch",
+            }
 
         return LoopReport(
             ledger=ledger,

@@ -121,3 +121,101 @@ class TestReconcile:
     def test_merge_prefixes_region_ids(self):
         merged = merge_ledgers([_ledger("a", [("金额", "1.00")]), _ledger("b", [("金额", "1.00")])])
         assert all(":" in rid for fld in merged.fields for rid in fld.region_ids)
+
+
+class TestSumConsistency:
+    """单据内部的勾稽校验。
+
+    这类矛盾两边都识别正确，只有加总校验才能发现——OCR 质量模型管不了。
+    """
+
+    def _fields(self, total: str, items: list[tuple[str, str]]):
+        fields = [FieldValue(name="金额", value=total, region_ids=["r_total"])]
+        for index, (label, amount) in enumerate(items):
+            fields.append(
+                FieldValue(name=f"明细:{label}", value=amount, region_ids=[f"r{index}"])
+            )
+        return fields
+
+    def test_mismatch_is_reported(self):
+        from tracecell.policy import SumRule
+        from tracecell.reconcile import check_sum_consistency
+
+        rule = SumRule(total="金额", components=["明细"])
+        fields = self._fields(
+            "2,864.50", [("差旅费", "1,480.00"), ("办公用品", "386.50"), ("业务招待费", "1,098.00")]
+        )
+        findings = check_sum_consistency(fields, rule)
+        assert len(findings) == 1
+        assert findings[0].kind == "sum_mismatch"
+        assert findings[0].severity is Severity.CRITICAL
+        assert "2964.50" in findings[0].message
+        assert "+100.00" in findings[0].message
+
+    def test_consistent_totals_pass(self):
+        from tracecell.policy import SumRule
+        from tracecell.reconcile import check_sum_consistency
+
+        rule = SumRule(total="金额", components=["明细"])
+        fields = self._fields("1,866.50", [("差旅费", "1,480.00"), ("办公用品", "386.50")])
+        assert check_sum_consistency(fields, rule) == []
+
+    def test_single_component_is_not_checked(self):
+        """只有一个明细时，加总校验没有意义。"""
+
+        from tracecell.policy import SumRule
+        from tracecell.reconcile import check_sum_consistency
+
+        rule = SumRule(total="金额", components=["明细"])
+        fields = self._fields("100.00", [("差旅费", "100.00")])
+        assert check_sum_consistency(fields, rule) == []
+
+    def test_missing_total_is_skipped(self):
+        from tracecell.policy import SumRule
+        from tracecell.reconcile import check_sum_consistency
+
+        rule = SumRule(total="金额", components=["明细"])
+        fields = [FieldValue(name="明细:差旅费", value="100.00")]
+        assert check_sum_consistency(fields, rule) == []
+
+
+class TestLineItemExtraction:
+    def test_line_items_are_extracted_with_label_and_amount(self):
+        from tracecell.extractors import LineItemExtractor
+        from tracecell.types import BBox, Category, Region
+
+        regions = [
+            Region(
+                id="r008",
+                page=1,
+                bbox=BBox(0, 0, 1, 1),
+                category=Category.TEXT,
+                text="差旅费　杭州至南京项目现场实施差旅　1,480.00",
+            ),
+            Region(
+                id="r011",
+                page=1,
+                bbox=BBox(0, 0, 1, 1),
+                category=Category.TEXT,
+                text="合计金额：¥2,864.50",
+            ),
+        ]
+        items = LineItemExtractor().extract(regions)
+        assert len(items) == 1
+        assert items[0].name == "明细:差旅费"
+        assert items[0].value == "1,480.00"
+
+    def test_total_row_is_not_treated_as_a_line_item(self):
+        from tracecell.extractors import LineItemExtractor
+        from tracecell.types import BBox, Category, Region
+
+        regions = [
+            Region(
+                id="r011",
+                page=1,
+                bbox=BBox(0, 0, 1, 1),
+                category=Category.TEXT,
+                text="合计金额：¥2,864.50",
+            )
+        ]
+        assert LineItemExtractor().extract(regions) == []

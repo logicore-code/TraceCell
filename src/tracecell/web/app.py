@@ -20,7 +20,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .. import __version__
 from ..agent.loop import VerificationLoop
-from ..extractors import RegexFieldExtractor, schema_by_name
+from ..extractors import build_extractor, schema_by_name
 from ..ledger import export_csv, export_markdown, ledger_summary
 from ..providers import layout as layout_mod
 from ..providers.jev import HttpJevScorer
@@ -97,7 +97,8 @@ def create_app(provider: str = "replay") -> FastAPI:
             escalator=escalator,
             policy=policy,
             risk_policy=risk,
-            extractor=RegexFieldExtractor(schema_by_name(schema)),
+            extractor=build_extractor(schema),
+            schema=schema,
         )
 
     @app.get("/api/health")

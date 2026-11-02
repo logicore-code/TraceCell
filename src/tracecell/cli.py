@@ -19,7 +19,7 @@ from pathlib import Path
 from . import __version__
 from .agent.loop import VerificationLoop
 from .calibration import calibrate, load_samples, per_category_stats
-from .extractors import RegexFieldExtractor, schema_by_name
+from .extractors import build_extractor, schema_by_name
 from .ledger import export_csv, export_markdown, ledger_summary
 from .policy import BudgetPolicy, RiskPolicy
 from .providers.jev import HttpJevScorer
@@ -66,7 +66,8 @@ def _build_loop(args, doc_id: str, schema: str) -> VerificationLoop:
         escalator=escalator,
         policy=BudgetPolicy(),
         risk_policy=RiskPolicy(),
-        extractor=RegexFieldExtractor(schema_by_name(schema)),
+        extractor=build_extractor(schema),
+        schema=schema,
     )
 
 

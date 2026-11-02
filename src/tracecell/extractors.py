@@ -126,6 +126,60 @@ class RegexFieldExtractor:
         return fields
 
 
+class LineItemExtractor:
+    """把表格里的明细行抽成字段。
+
+    单据上的明细行长得都差不多：一段标签，加一个金额。例如
+
+        差旅费　杭州至南京项目现场实施差旅　1,480.00
+
+    抽出来是 {"name": "明细:差旅费", "value": "1,480.00"}。有了明细字段，
+    才能校验"明细加起来等不等于合计"——这类矛盾两边都识别正确，只有加总
+    校验才能发现。
+    """
+
+    # 行尾是金额，前面是标签
+    PATTERN = re.compile(r"([^\d\s，,；;]{2,20})[\s　:：]*[¥￥]?\s*([\d,]+\.\d{2})\s*$")
+
+    # 这些词出现在金额前面时，说明这一行是会计科目或小计，不是明细行
+    ACCOUNTING = ("合计", "总计", "总额", "小计", "价税", "金额", "税额", "单价", "税率", "数量", "价税合计")
+
+    def __init__(self, exclude: tuple[str, ...] = ("合计", "总计", "总额", "价税合计")) -> None:
+        self.exclude = exclude
+
+    def extract(self, regions: list[Region]) -> list[FieldValue]:
+        fields: list[FieldValue] = []
+        seen: set[str] = set()
+        for region in regions:
+            text = (region.selected_text or region.text or "").strip()
+            if not text or any(keyword in text for keyword in self.exclude):
+                continue
+            match = self.PATTERN.search(text.replace("\t", " "))
+            if not match:
+                continue
+            # 明细名取整行里第一个分隔符之前的那一段：
+            # "差旅费　杭州至南京项目现场实施差旅　1,480.00" → "差旅费"
+            head = text[: match.start()].strip(" :：\t")
+            parts = [part for part in re.split(r"[\s　:：]+", head) if part]
+            label = parts[0].strip() if parts else ""
+            if not label or label in seen:
+                continue
+            if any(keyword in label for keyword in self.ACCOUNTING):
+                continue
+            if re.fullmatch(r"[\d.,%¥￥]+", label):
+                continue
+            seen.add(label)
+            fields.append(
+                FieldValue(
+                    name=f"明细:{label}",
+                    value=match.group(2),
+                    region_ids=[region.id],
+                    source="line-item",
+                )
+            )
+        return fields
+
+
 class KieFieldExtractor:
     """调用 MiniCPM-OCR 的关键信息抽取能力。"""
 
@@ -188,3 +242,25 @@ def schema_by_name(name: str) -> FieldSchema:
     if name not in SCHEMAS:
         raise KeyError(f"未知的单据类型：{name}，可选：{', '.join(SCHEMAS)}")
     return SCHEMAS[name]
+
+
+class SchemaExtractor:
+    """把常规字段抽取和明细行抽取合在一起。
+
+    明细字段单独抽出来，是为了让"明细加起来等不等于合计"这类校验有东西
+    可加。字段名前缀是"明细:"，勾稽规则按前缀匹配。
+    """
+
+    def __init__(self, schema: FieldSchema, with_line_items: bool = True) -> None:
+        self.base = RegexFieldExtractor(schema)
+        self.line_items = LineItemExtractor() if with_line_items else None
+
+    def extract(self, regions: list[Region]) -> list[FieldValue]:
+        fields = list(self.base.extract(regions))
+        if self.line_items is not None:
+            fields.extend(self.line_items.extract(regions))
+        return fields
+
+
+def build_extractor(schema_name: str) -> SchemaExtractor:
+    return SchemaExtractor(schema_by_name(schema_name))
