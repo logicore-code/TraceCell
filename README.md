@@ -272,6 +272,17 @@ AUROC 1.0000
 **输入**：图片和 PDF 都收。PDF 用 pypdfium2 逐页渲染（PDFium，BSD-3 许可；
 没用 PyMuPDF 是因为它是 AGPL-3.0），多页文档逐页解析，区域记住自己在第几页。
 
+**版面切分**默认用自带的投影法，不依赖模型；装了官方的 PP-DocLayoutV3 就能换：
+
+```bash
+pip install onnxruntime
+python3 scripts/fetch_layout_model.py
+export TRACECELL_LAYOUT_MODEL=$(python3 scripts/fetch_layout_model.py --path-only)
+```
+
+模型是 ONNX 版（136MB），不用 PyTorch 也不用 PaddlePaddle。官方检测器在样例
+发票上切出 27 个区域，自带的投影法切 18 个——表格边界和标题都分得更准。
+
 **批量**：
 
 ```bash

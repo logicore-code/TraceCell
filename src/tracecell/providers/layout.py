@@ -15,7 +15,10 @@ TraceCell 需要知道"一块文字在原图的哪里"，否则证据坐标无�
 from __future__ import annotations
 
 import io
+import json
+import os
 from dataclasses import dataclass
+from pathlib import Path
 from functools import lru_cache
 from typing import Any
 
@@ -198,6 +201,153 @@ def _decoded(image: bytes):
         return Image.open(io.BytesIO(image)).convert("RGB")
     except Exception:  # noqa: BLE001 - 任何解码失败都退化成空白图
         return None
+
+
+# PP-DocLayoutV3 的标签到 TraceCell 版面类别的映射
+PADDLE_LABEL_TO_CATEGORY = {
+    "table": Category.TABLE,
+    "display_formula": Category.FORMULA,
+    "inline_formula": Category.FORMULA,
+    "algorithm": Category.FORMULA,
+    "seal": Category.SEAL,
+    "chart": Category.FIGURE,
+    "image": Category.FIGURE,
+    "figure_title": Category.FIGURE,
+    "footer_image": Category.FIGURE,
+    "header_image": Category.FIGURE,
+}
+
+
+class PaddleLayoutDetector:
+    """官方 PP-DocLayoutV3 版面检测（ONNX 版）。
+
+    自带的投影法切分器不依赖任何模型，缺点是复杂表格和多栏排版会偏。
+    真要处理扫描件，这个检测器更靠谱——它是 MiniCPM-OCR 官方流水线里
+    用的那一个。
+
+    模型文件用 ``scripts/fetch_layout_model.py`` 下载（约 136MB），然后：
+
+        export TRACECELL_LAYOUT_MODEL=/path/to/PP-DocLayoutV3
+
+    onnxruntime 不在默认依赖里，装了才会用：
+
+        pip install onnxruntime
+    """
+
+    INPUT_SIZE = 800
+
+    def __init__(self, model_dir: str, threshold: float = 0.4) -> None:
+        import onnxruntime as ort
+
+        self.model_dir = Path(model_dir)
+        self.threshold = threshold
+        self.session = ort.InferenceSession(
+            str(self.model_dir / "PP-DocLayoutV3.onnx"),
+            providers=["CPUExecutionProvider"],
+        )
+        self.labels = self._load_labels()
+
+    def _load_labels(self) -> list[str]:
+        """标签表。优先用 config.json 的 id2label，没有就退回 yml。"""
+
+        config_path = self.model_dir / "config.json"
+        if config_path.exists():
+            data = json.loads(config_path.read_text(encoding="utf-8"))
+            id2label = data.get("id2label") or {}
+            if id2label:
+                size = max(int(k) for k in id2label) + 1
+                labels = [""] * size
+                for key, value in id2label.items():
+                    labels[int(key)] = value
+                return labels
+        yml_path = self.model_dir / "inference.yml"
+        if yml_path.exists():
+            for line in yml_path.read_text(encoding="utf-8").splitlines():
+                if line.startswith("label_list:"):
+                    continue
+                if line.startswith("- ") and not line.startswith("- -"):
+                    pass
+            labels = []
+            inside = False
+            for line in yml_path.read_text(encoding="utf-8").splitlines():
+                if line.startswith("label_list:"):
+                    inside = True
+                    continue
+                if inside:
+                    if line.startswith("- "):
+                        labels.append(line[2:].strip())
+                    elif line.strip():
+                        break
+            if labels:
+                return labels
+        raise ValueError(f"{self.model_dir} 里找不到标签表")
+
+    def detect(self, image: bytes, padding: float = 0.004) -> list[LayoutBlock]:
+        from PIL import Image
+
+        with Image.open(io.BytesIO(image)) as source:
+            rgb = source.convert("RGB")
+            width, height = rgb.size
+            resized = rgb.resize((self.INPUT_SIZE, self.INPUT_SIZE), Image.BILINEAR)
+            pixels = np.asarray(resized, dtype=np.float32) / 255.0
+
+        tensor = np.transpose(pixels, (2, 0, 1))[None, ...]
+        logits, pred_boxes = self.session.run(
+            ["logits", "pred_boxes"], {"pixel_values": tensor}
+        )
+
+        scores = _softmax(logits[0])
+        best_scores = scores.max(axis=1)
+        best_labels = scores.argmax(axis=1)
+
+        blocks: list[LayoutBlock] = []
+        for index in range(scores.shape[0]):
+            score = float(best_scores[index])
+            if score < self.threshold:
+                continue
+            cx, cy, w, h = (float(v) for v in pred_boxes[0][index])
+            x0 = (cx - w / 2) * width
+            y0 = (cy - h / 2) * height
+            x1 = (cx + w / 2) * width
+            y1 = (cy + h / 2) * height
+            x0 = max(0.0, min(1.0, x0 / width))
+            y0 = max(0.0, min(1.0, y0 / height))
+            x1 = max(0.0, min(1.0, x1 / width))
+            y1 = max(0.0, min(1.0, y1 / height))
+            if x1 - x0 < 0.002 or y1 - y0 < 0.002:
+                continue
+            label = self.labels[int(best_labels[index])]
+            blocks.append(
+                LayoutBlock(
+                    bbox=BBox(x0, y0, x1, y1),
+                    category=PADDLE_LABEL_TO_CATEGORY.get(label, Category.TEXT),
+                    ink_ratio=score,
+                )
+            )
+        blocks.sort(key=lambda b: (b.bbox.y0, b.bbox.x0))
+        return blocks
+
+
+def _softmax(array: np.ndarray) -> np.ndarray:
+    shifted = array - array.max(axis=1, keepdims=True)
+    exp = np.exp(shifted)
+    return exp / exp.sum(axis=1, keepdims=True)
+
+
+def get_detector(model_dir: str | None = None):
+    """拿版面检测器。
+
+    给了模型目录就用官方的 PP-DocLayoutV3，没给或者 onnxruntime 没装就
+    退回自带的投影法——两条路都能跑，只是复杂版面的效果不一样。
+    """
+
+    candidate = model_dir or os.environ.get("TRACECELL_LAYOUT_MODEL")
+    if candidate:
+        try:
+            return PaddleLayoutDetector(candidate)
+        except Exception:  # noqa: BLE001 - 模型有问题就退回内置的
+            pass
+    return detect
 
 
 def crop(image: bytes, bbox: BBox, padding: float = 0.0) -> bytes:

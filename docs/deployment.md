@@ -112,7 +112,22 @@ ollama run openbmb/minicpm-v4.7
 docker-compose 里的默认模型是 35B-A3B 的 AWQ 版，24GB 卡的环境把
 `VLM_MODEL` 换成 `openbmb/MiniCPM-V-4.7-1B` 即可。
 
-### 4. 起 TraceCell
+### 4. 版面检测（可选但建议）
+
+TraceCell 自带一个投影法版面切分器，不依赖任何模型，复杂表格和多栏排版会偏。
+真要处理扫描件，换成官方的 PP-DocLayoutV3——这也是 MiniCPM-OCR 官方流水线
+用的那一个：
+
+```bash
+pip install onnxruntime
+python3 scripts/fetch_layout_model.py          # 约 136MB，ONNX 版
+export TRACECELL_LAYOUT_MODEL=$(python3 scripts/fetch_layout_model.py --path-only)
+```
+
+模型文件不进仓库，用环境变量指路。没设这个变量就继续用自带的投影法，流程
+照跑不误。
+
+### 5. 起 TraceCell
 
 ```bash
 docker compose -f deploy/docker-compose.yml up -d

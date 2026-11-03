@@ -28,6 +28,7 @@ import requests
 
 from ..types import BBox, Category, Region
 from . import layout as layout_mod
+from . import layout as layout_mod
 from .base import TASK_PROMPTS, PageParse, ParseProfile
 
 DEFAULT_TIMEOUT = 300
@@ -58,11 +59,21 @@ class OpenAICompatOcr:
         self.session = session or requests.Session()
         self.extra_body = extra_body or {}
         self._layout: Callable[[bytes], list[layout_mod.LayoutBlock]] | None = None
+        self._detector = layout_mod.get_detector()
 
     def use_layout(self, detector: Callable[[bytes], list[layout_mod.LayoutBlock]]) -> None:
-        """替换版面切分器。默认用内置的投影法实现。"""
+        """替换版面切分器。"""
 
         self._layout = detector
+
+    def use_official_layout(self, model_dir: str | None = None) -> None:
+        """改用官方 PP-DocLayoutV3 做版面切分。
+
+        没有模型或者 onnxruntime 没装的话保持原样，不报错——投影法照样能跑。
+        """
+
+        detector = layout_mod.get_detector(model_dir)
+        self._detector = detector
 
     # -- 单块识别 ---------------------------------------------------------
     def parse_region(
@@ -102,7 +113,7 @@ class OpenAICompatOcr:
     # -- 整页解析 ---------------------------------------------------------
     def parse_page(self, image: bytes, profile: ParseProfile | None = None) -> PageParse:
         profile = profile or ParseProfile()
-        detector = self._layout or layout_mod.detect
+        detector = self._layout or self._detector
         blocks = detector(image)
 
         regions: list[Region] = []

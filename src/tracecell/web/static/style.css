@@ -470,6 +470,7 @@ select:hover { border-color: #2d3f52; }
 .grid tbody tr.is-highlight {
   background: rgba(76, 201, 240, .12);
   box-shadow: inset 3px 0 0 var(--accent);
+  scroll-margin-top: 76px;   /* 让高亮行落在吸顶顶栏下面 */
 }
 .grid tbody tr.is-highlight:hover { background: rgba(76, 201, 240, .17); }
 .grid tbody tr:focus-visible {

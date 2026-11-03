@@ -388,3 +388,36 @@ class TestFitRepairGains:
         reparse = next(p for p in plans if p.action == "reparse")
         # 增益 0.05 远小于默认的 0.35，期望置信度应该明显更低
         assert reparse.expected_confidence < 0.5 + 0.5 * 0.35
+
+
+class TestLayoutDetectorSelection:
+    """版面检测器可切换：官方模型优先，没了就用自带的。"""
+
+    def test_falls_back_to_the_builtin_detector(self, monkeypatch):
+        from tracecell.providers import layout
+
+        monkeypatch.delenv("TRACECELL_LAYOUT_MODEL", raising=False)
+        assert layout.get_detector() is layout.detect
+
+    def test_uses_the_official_model_when_available(self, monkeypatch):
+        from tracecell.providers import layout
+
+        class Fake:
+            def __init__(self, model_dir):
+                self.model_dir = model_dir
+
+        monkeypatch.setenv("TRACECELL_LAYOUT_MODEL", "/tmp/does-not-exist")
+        monkeypatch.setattr(layout, "PaddleLayoutDetector", Fake)
+        detector = layout.get_detector()
+        assert isinstance(detector, Fake)
+
+    def test_broken_model_falls_back_instead_of_crashing(self, monkeypatch):
+        from tracecell.providers import layout
+
+        class Broken:
+            def __init__(self, model_dir):
+                raise RuntimeError("模型坏了")
+
+        monkeypatch.setenv("TRACECELL_LAYOUT_MODEL", "/tmp/broken")
+        monkeypatch.setattr(layout, "PaddleLayoutDetector", Broken)
+        assert layout.get_detector() is layout.detect

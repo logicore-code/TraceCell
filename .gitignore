@@ -22,6 +22,7 @@ htmlcov/
 # 模型权重与产物（不要提交）
 *.gguf
 *.onnx
+*.onnx.data
 *.safetensors
 models/
 weights/

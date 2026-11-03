@@ -842,7 +842,10 @@ function fieldRowHtml(field, index) {
 function scrollToHighlight() {
   if (!state.highlightRegion) return;
   const row = $('#fieldBody tr.is-highlight');
-  if (row) row.scrollIntoView({ block: 'nearest' });
+  if (!row) return;
+  // 顶栏是吸顶的，留出它的高度，别把高亮行推到顶栏底下看不见。
+  const offset = row.getBoundingClientRect().top + window.pageYOffset - 124;
+  window.scrollTo({ top: Math.max(0, offset) });
 }
 
 /* ── 决策流水 ──────────────────────────────────────────────────────── */
