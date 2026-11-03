@@ -421,3 +421,57 @@ class TestLayoutDetectorSelection:
         monkeypatch.setenv("TRACECELL_LAYOUT_MODEL", "/tmp/broken")
         monkeypatch.setattr(layout, "PaddleLayoutDetector", Broken)
         assert layout.get_detector() is layout.detect
+
+
+class TestRetryAndParallelBatch:
+    def test_scorer_retries_before_giving_up(self):
+        """服务抖一下不该直接把这一格推进人工队列。"""
+
+        from tracecell.degrade import DegradationLog, ResilientScorer
+
+        calls = {"n": 0}
+
+        class Flaky:
+            def score(self, image, text, category="text"):
+                calls["n"] += 1
+                if calls["n"] < 3:
+                    raise RuntimeError("连接被重置")
+                return ScoreResult(0.91, Verdict.SCORED)
+
+        log = DegradationLog()
+        result = ResilientScorer(Flaky(), log, retries=2, backoff=0.01).score(b"", "x", "text")
+        assert result.score == 0.91
+        assert calls["n"] == 3
+        assert not log.failed
+
+    def test_exhausted_retries_degrade(self):
+        from tracecell.degrade import DegradationLog, ResilientScorer
+
+        class Broken:
+            def score(self, image, text, category="text"):
+                raise RuntimeError("连不上")
+
+        log = DegradationLog()
+        result = ResilientScorer(Broken(), log, retries=1, backoff=0.01).score(b"", "x", "text")
+        assert result.verdict is Verdict.FAILED
+        assert log.failed
+
+    def test_parallel_batch_keeps_input_order(self, tmp_path):
+        import time as _time
+
+        from tracecell.batch import run_batch
+
+        files = []
+        for index in range(6):
+            path = tmp_path / f"doc{index}.png"
+            path.write_bytes(b"x")
+            files.append(path)
+
+        def process(path, scenario):
+            # 让靠前的文件慢一点，验证结果顺序没被打乱
+            _time.sleep(0.02 * (6 - int(path.stem[3:])))
+            return make_ledger()
+
+        summary = run_batch(files, process, jobs=4)
+        assert [item.source for item in summary.items] == [str(f) for f in files]
+        assert len(summary.ok) == 6

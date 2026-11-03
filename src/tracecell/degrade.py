@@ -59,15 +59,29 @@ class DegradationLog:
 
 
 class ResilientScorer:
-    """评分服务的包装。挂了就把这一格标成"没评上分"。"""
+    """评分服务的包装。
 
-    def __init__(self, scorer, log: DegradationLog | None = None) -> None:
+    先重试几次——网络抖动和模型服务重启是常事，一次失败就放弃会把本来
+    能核验的单据推进人工队列。重试用完还不行，才降级成"没评上分"。
+    """
+
+    def __init__(
+        self,
+        scorer,
+        log: DegradationLog | None = None,
+        retries: int = 2,
+        backoff: float = 1.5,
+    ) -> None:
         self.scorer = scorer
         self.log = log or DegradationLog()
+        self.retries = retries
+        self.backoff = backoff
 
     def score(self, image: bytes, text: str, category: str = "text") -> ScoreResult:
         try:
-            return self.scorer.score(image, text, category)
+            return _with_retry(
+                lambda: self.scorer.score(image, text, category), self.retries, self.backoff
+            )
         except Exception as exc:  # noqa: BLE001 - 任何故障都要降级而不是崩
             self.log.record("jev", f"评分失败：{exc}")
             return ScoreResult(None, Verdict.FAILED, f"评分服务不可用：{exc}")
@@ -76,24 +90,54 @@ class ResilientScorer:
         self, image: bytes, candidates: list[str], category: str = "text"
     ) -> list[ScoreResult]:
         try:
-            return self.scorer.score_best(image, candidates, category)
+            return _with_retry(
+                lambda: self.scorer.score_best(image, candidates, category),
+                self.retries,
+                self.backoff,
+            )
         except Exception as exc:  # noqa: BLE001
             self.log.record("jev", f"择优失败：{exc}")
             return [ScoreResult(None, Verdict.FAILED, f"评分服务不可用：{exc}") for _ in candidates]
 
 
+def _with_retry(action, retries: int, backoff: float):
+    """执行一次，失败就退避重试。最后一次失败把异常抛出去。"""
+
+    delay = backoff
+    last: Exception | None = None
+    for attempt in range(retries + 1):
+        try:
+            return action()
+        except Exception as exc:  # noqa: BLE001 - 重试是这里的目的
+            last = exc
+            if attempt < retries:
+                time.sleep(delay)
+                delay *= 2
+    raise last  # type: ignore[misc]
+
+
 class ResilientEscalator:
     """升级复核的包装。挂了返回空串，调用方据此转人工。"""
 
-    def __init__(self, escalator, log: DegradationLog | None = None) -> None:
+    def __init__(
+        self,
+        escalator,
+        log: DegradationLog | None = None,
+        retries: int = 1,
+        backoff: float = 1.5,
+    ) -> None:
         self.escalator = escalator
         self.log = log or DegradationLog()
+        self.retries = retries
+        self.backoff = backoff
 
     def review(self, image: bytes, question: str, hint: str = "") -> str:
         if self.escalator is None:
             return ""
         try:
-            return self.escalator.review(image, question, hint)
+            return _with_retry(
+                lambda: self.escalator.review(image, question, hint), self.retries, self.backoff
+            )
         except Exception as exc:  # noqa: BLE001
             self.log.record("minicpm-v", f"升级复核失败：{exc}")
             return ""

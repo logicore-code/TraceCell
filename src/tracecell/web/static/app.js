@@ -445,7 +445,9 @@ function renderDocLists() {
 }
 
 /* ── 载入账本 ──────────────────────────────────────────────────────── */
-async function selectDocument(docId, fallback) {
+async function selectDocument(docId, fallback, keepHighlight) {
+  const changed = docId !== state.docId;
+  if (changed && !keepHighlight) state.highlightRegion = null;
   state.docId = docId;
   state.checklist = null;
   state.ledger = null;
@@ -653,7 +655,7 @@ function gotoDocument(docId, regionId) {
   state.highlightRegion = regionId || null;
   setView('ledger');
   if (docId && docId !== state.docId) {
-    selectDocument(docId);
+    selectDocument(docId, null, true);
     return;
   }
   renderAll();
@@ -1548,7 +1550,11 @@ async function handleUpload(event) {
   $('#uploadHint').textContent = '正在解析版面并跑核验流程，请稍候。';
 
   try {
-    const response = await fetch(API.analyze, { method: 'POST', body: form });
+    // 后端的 scenario 是查询参数，表单字段同时带上，两边都传。
+    const response = await fetch(`${API.analyze}?scenario=${encodeURIComponent(scenario)}`, {
+      method: 'POST',
+      body: form,
+    });
     if (!response.ok) throw new Error(await readError(response));
     const ledger = await response.json();
 

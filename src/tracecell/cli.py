@@ -225,7 +225,7 @@ def cmd_batch(args) -> int:
         report = loop.run(str(path), path.stem, str(path))
         return report.ledger
 
-    summary = run_batch(files, process, default_scenario=args.scenario)
+    summary = run_batch(files, process, default_scenario=args.scenario, jobs=args.jobs)
     print(f"共 {len(summary.items)} 份，成功 {len(summary.ok)}，失败 {len(summary.failed)}")
     for item in summary.items:
         if item.ledger is None:
@@ -461,6 +461,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_batch.add_argument("paths", nargs="+", help="文件或目录")
     p_batch.add_argument("--out", default=None, help="账本与汇总的输出目录")
     p_batch.add_argument("--summary-out", default=None, help="只导出汇总 JSON")
+    p_batch.add_argument("--jobs", type=int, default=1, help="并发数，模型调用是网络等待，可以开大点")
     add_provider_args(p_batch)
     p_batch.set_defaults(func=cmd_batch)
 

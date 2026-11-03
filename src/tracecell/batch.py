@@ -134,35 +134,40 @@ def run_batch(
     files: list[Path],
     process: Callable[[Path, str], DocumentLedger],
     default_scenario: str = "invoice",
+    jobs: int = 1,
 ) -> BatchSummary:
     """跑一批文档。
 
     process 负责真正核验一份文件，批量层只管调度和汇总。一份失败不影响
     其余的——财务的活不能因为一张烂图就停下来。
+
+    jobs > 1 时并发处理。核验的耗时几乎全在模型调用上（网络等待），线程
+    就够，不必上多进程。结果顺序跟输入顺序一致。
     """
 
     summary = BatchSummary()
-    for path in files:
-        scenario = guess_scenario(path, default_scenario)
+    scenarios = [guess_scenario(path, default_scenario) for path in files]
+
+    def run_one(index: int) -> BatchItem:
+        path = files[index]
+        scenario = scenarios[index]
         try:
             ledger = process(path, scenario)
-            summary.items.append(
-                BatchItem(
-                    source=str(path),
-                    doc_id=ledger.doc_id,
-                    scenario=scenario,
-                    ledger=ledger,
-                )
+            return BatchItem(
+                source=str(path), doc_id=ledger.doc_id, scenario=scenario, ledger=ledger
             )
         except Exception as exc:  # noqa: BLE001 - 单份失败不拖垮整批
-            summary.items.append(
-                BatchItem(
-                    source=str(path),
-                    doc_id=path.stem,
-                    scenario=scenario,
-                    error=str(exc),
-                )
+            return BatchItem(
+                source=str(path), doc_id=path.stem, scenario=scenario, error=str(exc)
             )
+
+    if jobs > 1 and len(files) > 1:
+        from concurrent.futures import ThreadPoolExecutor
+
+        with ThreadPoolExecutor(max_workers=jobs) as pool:
+            summary.items = list(pool.map(run_one, range(len(files))))
+    else:
+        summary.items = [run_one(index) for index in range(len(files))]
     return summary
 
 
