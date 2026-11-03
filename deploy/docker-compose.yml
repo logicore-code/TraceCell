@@ -1,14 +1,16 @@
 # TraceCell 全离线部署：三个 MiniCPM 模型 + TraceCell 应用
 #
-# 一张 24GB 显存的卡可以同时跑起来：
-#   - MiniCPM-OCR 1.0   1.3B   解析
-#   - MiniCPM-OCR Jev   2B     评分
-#   - MiniCPM-V 4.7     35B-A3B 升级复核（每个 token 只激活 3B）
+# 默认这套配置按 24GB 显存的卡配：
+#   - MiniCPM-OCR 1.0   1.3B   解析     BF16 权重 2.6GB + mmproj 0.9GB
+#   - MiniCPM-OCR Jev   2B     评分     BF16 权重 4.2GB
+#   - MiniCPM-V 4.7     1B     升级复核 BF16 权重 3.1GB
 #
-# 显存不够时优先降级顺序：
-#   1. 把 V 4.7 换成 1B 版本（--vlm-model openbmb/MiniCPM-V-4.7-1B）
-#   2. 把 V 4.7 换成 GGUF + llama.cpp 端侧部署
-#   3. 只留 OCR 1.0 + Jev，升级复核这一档退化为转人工
+# 48GB 的卡可以把 V 4.7 换成 35B-A3B 的 AWQ 版（权重 22.7GB）：
+#   VLM_MODEL=openbmb/MiniCPM-V-4.7-35B-A3B-AWQ VLM_GPU_FRACTION=0.62 \
+#     docker compose -f deploy/docker-compose.yml up -d
+#
+# 35B-A3B 的 BF16 权重有 65.6GB，单卡放不下，要么量化，要么走官方那套把
+# 专家权重分片按需读取的端侧方案。
 
 services:
   minicpm-ocr:
@@ -70,11 +72,11 @@ services:
     image: vllm/vllm-openai:latest
     container_name: tracecell-vlm
     command:
-      - --model=${VLM_MODEL:-openbmb/MiniCPM-V-4.7-35B-A3B}
-      - --served-model-name=${VLM_MODEL:-openbmb/MiniCPM-V-4.7-35B-A3B}
+      - --model=${VLM_MODEL:-openbmb/MiniCPM-V-4.7-1B}
+      - --served-model-name=${VLM_MODEL:-openbmb/MiniCPM-V-4.7-1B}
       - --port=8001
       - --trust-remote-code
-      - --gpu-memory-utilization=0.36
+      - --gpu-memory-utilization=${VLM_GPU_FRACTION:-0.25}
       - --max-model-len=32768
     ports:
       - "8001:8001"
@@ -105,7 +107,7 @@ services:
       - TRACECELL_OCR_URL=http://minicpm-ocr:8000
       - TRACECELL_JEV_URL=http://minicpm-ocr-jev:8030
       - TRACECELL_VLM_URL=http://minicpm-v47:8001
-      - TRACECELL_OCR_MODEL=openbmb/MiniCPM-1.0
+      - TRACECELL_OCR_MODEL=openbmb/MiniCPM-OCR-1.0
     depends_on:
       minicpm-ocr:
         condition: service_healthy

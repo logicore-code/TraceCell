@@ -4,9 +4,13 @@ TraceCell 的三个模型都可以本地跑，数据不出机器。下面按"从
 
 | 形态 | 硬件 | 能力 | 适用 |
 | --- | --- | --- | --- |
-| A 全离线单卡 | 1×24GB 显卡 | 解析 + 评分 + 升级复核 | 生产环境、数据不能出内网 |
+| A 全离线单卡 | 1×24GB 显卡，V 4.7 用 1B 版 | 解析 + 评分 + 升级复核 | 生产环境、数据不能出内网 |
+| A' 全离线单卡 | 1×48GB 显卡，V 4.7 用 35B-A3B AWQ | 同上，疑难区域判得更准 | 对复核质量有要求的场景 |
 | B 端侧 CPU | 笔记本，纯 CPU | 解析 + 评分 | 现场作业、离线演示 |
 | C 回放模式 | 无需 GPU | 全流程跑通 | 评审、CI、开发 |
+
+显存预算见文末的表。V 4.7 的 35B-A3B 版 BF16 权重是 65.6 GiB，单卡跑不下，
+要么换 AWQ，要么换 1B 版。
 
 ---
 
@@ -88,18 +92,25 @@ curl http://127.0.0.1:8030/healthz     # {"status":"ok"}
 
 ### 3. MiniCPM-V 4.7（升级复核）
 
+BF16 权重 65.6 GiB，24GB 卡放不下。按显存选版本：
+
 ```bash
+# 24GB 卡：1B 版（BF16 约 3.1GB）
 pip install "transformers[serving]>=5.18.0"
-transformers serve openbmb/MiniCPM-V-4.7-35B-A3B --port 8001 --host 0.0.0.0
+transformers serve openbmb/MiniCPM-V-4.7-1B --port 8001 --host 0.0.0.0
+
+# 48GB 卡：35B-A3B 的 AWQ 版（约 22.7GB）
+transformers serve openbmb/MiniCPM-V-4.7-35B-A3B-AWQ --port 8001 --host 0.0.0.0
 ```
 
-或者用 Ollama（端侧最省事）：
+或者用 Ollama（端侧最省事，官方已经收录）：
 
 ```bash
 ollama run openbmb/minicpm-v4.7
 ```
 
-显存紧张时换成 1B 版本：`openbmb/MiniCPM-V-4.7-1B`。
+docker-compose 里的默认模型是 35B-A3B 的 AWQ 版，24GB 卡的环境把
+`VLM_MODEL` 换成 `openbmb/MiniCPM-V-4.7-1B` 即可。
 
 ### 4. 起 TraceCell
 
@@ -177,15 +188,27 @@ tracecell serve --provider minicpm
 
 ## 显存预算
 
-24GB 卡的推荐分配：
+权重实际占用的显存（不含 KV cache 与激活）：
 
-| 服务 | 权重 | `--gpu-memory-utilization` | 说明 |
-| --- | --- | --- | --- |
-| MiniCPM-OCR 1.0 | 1.3B | 0.28 | 视觉编码器占得多 |
-| MiniCPM-OCR Jev | 2B | 0.25 | 二分类头，激活少 |
-| MiniCPM-V 4.7 | 35B-A3B | 0.36 | MoE，权重分片但激活只有 3B |
+| 模型 | 精度 | 权重体积 |
+| --- | --- | --- |
+| MiniCPM-OCR 1.0 | BF16 | 2.6 GB |
+| MiniCPM-OCR 1.0（mmproj 4x） | F16 | 0.9 GB |
+| MiniCPM-OCR Jev | BF16 | 4.2 GB |
+| MiniCPM-V 4.7 35B-A3B | BF16 | 65.6 GB |
+| MiniCPM-V 4.7 35B-A3B | AWQ | 22.7 GB |
+| MiniCPM-V 4.7 35B-A3B | FP8 | 38.0 GB |
+| MiniCPM-V 4.7 1B | BF16 | 3.1 GB |
 
-不够就按这个顺序降级：V 4.7 → 1B 版本 → GGUF 端侧 → 关掉升级复核（转人工）。
+24GB 卡（三个模型都在同一张卡上）：OCR 1.0 用 BF16、Jev 用 BF16、V 4.7 用
+1B 版，权重合计约 10.8GB，剩下的留给 KV cache 和视觉编码的中间激活。
+
+48GB 卡：把 V 4.7 换成 35B-A3B 的 AWQ 版，权重合计约 30.4GB，还剩十几 GB
+做 KV cache。想要 BF16 的 35B-A3B，显存得往 80GB 走，或者用官方那套把专家
+权重分片、按需从 SSD 读的端侧方案（见 OpenBMB/MiniCPM-V-Apps）。
+
+再不够就按这个顺序降级：V 4.7 换 1B → 关掉升级复核（转人工）→ OCR 和 Jev
+也换 GGUF 走 CPU。
 
 ## 常见问题
 

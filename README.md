@@ -268,9 +268,13 @@ src/tracecell/
 
 | 形态 | 硬件 | 能做什么 |
 | --- | --- | --- |
-| 全离线单卡 | 1×24GB 显卡 | 解析 + 评分 + 升级复核 |
+| 全离线单卡 | 1×24GB 显卡，V 4.7 用 1B 版 | 解析 + 评分 + 升级复核 |
+| 全离线单卡 | 1×48GB 显卡，V 4.7 用 35B-A3B 的 AWQ 版 | 同上，疑难区域判得更准 |
 | 端侧 CPU | 笔记本，纯 CPU | 解析 + 评分（GGUF 量化） |
 | 回放模式 | 无需 GPU | 全流程跑通 |
+
+V 4.7 的 35B-A3B 版 BF16 权重有 65.6GB，单卡放不下，量化后 22.7GB（AWQ）。
+具体显存分配见 [docs/deployment.md](docs/deployment.md)。
 
 ```bash
 docker compose -f deploy/docker-compose.yml up -d
