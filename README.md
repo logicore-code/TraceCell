@@ -4,6 +4,8 @@
 
 `Apache-2.0` · `Python 3.10+` · `MCP` · `MiniCPM-OCR 1.0` / `MiniCPM-OCR Jev` / `MiniCPM-V 4.7`
 
+**仓库**：[GitCode](https://gitcode.com/gcw_EkTYFH3T/TraceCell) · [GitHub](https://github.com/logicore-code/TraceCell)（两端同步，提交历史一致）
+
 ![TraceCell 证据账本工作台](docs/images/workbench.png)
 
 *点开任意一行，右侧给出该字段的原图裁剪、坐标、全部候选读数及其 Jev 分数*：
@@ -60,7 +62,7 @@ TraceCell 补的就是这一段：
 不需要 GPU，样例数据已经录好：
 
 ```bash
-git clone https://gitcode.com/gcw_EkTYFH3T/TraceCell.git
+git clone https://github.com/logicore-code/TraceCell.git   # 或 gitcode.com/gcw_EkTYFH3T/TraceCell.git
 cd TraceCell
 pip install -e ".[web]"
 

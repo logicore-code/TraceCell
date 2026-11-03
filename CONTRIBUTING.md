@@ -3,7 +3,7 @@
 ## 开发环境
 
 ```bash
-git clone https://gitcode.com/gcw_EkTYFH3T/TraceCell.git
+git clone https://github.com/logicore-code/TraceCell.git   # 或 gitcode.com/gcw_EkTYFH3T/TraceCell.git
 cd TraceCell
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[web,dev]"
