@@ -183,6 +183,13 @@ function tag(text, cls) {
   return `<span class="tag ${esc(cls)}">${esc(text)}</span>`;
 }
 
+/* 网络层的报错对用户没意义，换成人话 */
+function friendlyError(err) {
+  const message = (err && err.message) || String(err || '');
+  if (/failed to fetch|networkerror|load failed/i.test(message)) return '连不上服务端（网络错误）';
+  return message || '未知错误';
+}
+
 /* ── 网络 ──────────────────────────────────────────────────────────── */
 async function apiGet(path) {
   const response = await fetch(path, { headers: { Accept: 'application/json' } });
@@ -368,7 +375,7 @@ async function loadScenarios() {
     state.scenarios = [];
     select.innerHTML = '<option value="invoice">增值税发票</option>';
     select.disabled = false;
-    showToast(`单据类型加载失败：${err.message}`, 'error');
+    showToast(`单据类型加载失败：${friendlyError(err)}`, 'error');
   }
   updateScenarioHint();
 }
@@ -524,7 +531,7 @@ async function loadReconcile(force) {
     state.reconcile = data && typeof data === 'object' ? data : {};
   } catch (err) {
     state.reconcile = null;
-    state.reconcileError = err.message;
+    state.reconcileError = friendlyError(err);
   } finally {
     state.reconcileLoading = false;
     renderReconcile();
@@ -1201,7 +1208,7 @@ async function submitReview(regionId, verdict, correctedText) {
     showToast(meta ? meta.toast : '复核结论已回灌', 'ok');
     await refreshLedger();
   } catch (err) {
-    showToast(`复核回灌失败：${err.message}`, 'error');
+    showToast(`复核回灌失败：${friendlyError(err)}`, 'error');
     buttons.forEach((button) => { button.disabled = false; });
   }
 }

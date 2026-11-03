@@ -32,3 +32,6 @@ out/
 *.ledger.json
 ledger.json
 *.log
+
+# 截图临时目录
+.shots_tmp/

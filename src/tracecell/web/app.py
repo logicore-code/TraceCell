@@ -9,11 +9,12 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
@@ -155,12 +156,32 @@ def create_app(provider: str = "replay") -> FastAPI:
         return JSONResponse(payload)
 
     @app.post("/api/analyze")
-    async def analyze(file: UploadFile = File(...), scenario: str = "invoice") -> JSONResponse:
+    async def analyze(
+        file: UploadFile = File(...),
+        scenario: str = Form("invoice"),
+    ) -> JSONResponse:
         content = await file.read()
         if not content:
             raise HTTPException(status_code=400, detail="空文件")
-        doc_id = file.filename or "upload"
-        doc_id = doc_id.rsplit(".", 1)[0]
+        doc_id = (file.filename or "upload").rsplit(".", 1)[0]
+
+        if provider == "replay":
+            # 回放模式没有真实模型，但上传的文件可能就是录过的样例。
+            # 按内容哈希找一下，找到就直接回放那份账本。
+            digest = hashlib.sha256(content).hexdigest()
+            matched = merged.find_by_hash(digest) or merged.find_by_source(doc_id)
+            if matched is None:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "回放模式只支持已录制的样例。要核验新文档，"
+                        "请用 --provider minicpm 启动服务并接上 MiniCPM-OCR 与 Jev。"
+                    ),
+                )
+            document = merged.document(matched) or {}
+            scenario = document.get("schema", scenario)
+            doc_id = matched
+
         report = build_loop(doc_id, scenario).run(content, doc_id, file.filename or "")
         store.put(report.ledger, content, {"scenario": scenario, "label": "上传文件"})
         payload = report.ledger.to_dict()

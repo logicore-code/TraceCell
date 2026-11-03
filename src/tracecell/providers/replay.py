@@ -84,6 +84,17 @@ class ReplaySession:
     def doc_ids(self) -> list[str]:
         return list(self.documents)
 
+    def find_by_hash(self, digest: str) -> str | None:
+        """按文件内容的哈希反查文档标识。
+
+        上传一张图进来时，文件名未必对得上，但内容一样就应该是同一份。
+        """
+
+        for doc_id, document in self.documents.items():
+            if document.get("sha256") == digest:
+                return doc_id
+        return None
+
     def find_by_source(self, filename: str) -> str | None:
         """按源文件名反查文档标识。
 
