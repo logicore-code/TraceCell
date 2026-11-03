@@ -224,9 +224,12 @@ def crop(image: bytes, bbox: BBox, padding: float = 0.0) -> bytes:
         top = max(0, top - pad_y)
         right = min(width, right + pad_x)
         bottom = min(height, bottom + pad_y)
-    if right <= left or bottom <= top:
-        right = min(width, left + 1)
-        bottom = min(height, top + 1)
+    # 裁剪框至少留 1×1。bbox 落在图像右边界或下边界时，朴素的钳位会算出
+    # 一个宽或高为 0 的框，PIL 保存时会抛 "cannot write empty image"。
+    left = max(0, min(left, width - 1))
+    top = max(0, min(top, height - 1))
+    right = max(left + 1, min(width, right))
+    bottom = max(top + 1, min(height, bottom))
     buffer = io.BytesIO()
     source.crop((left, top, right, bottom)).save(buffer, format="PNG")
     return buffer.getvalue()

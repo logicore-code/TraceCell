@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Callable
 
 from ..budget import BudgetPlanner, CellState
@@ -28,6 +29,7 @@ from ..ledger import build_ledger, collect_findings
 from ..policy import BudgetPolicy, RiskPolicy
 from ..scenarios import get_scenario
 from ..providers import layout as layout_mod
+from ..providers.pages import Document, as_document
 from ..providers.base import (
     PROFILE_ALT,
     PROFILE_PRIMARY,
@@ -101,21 +103,43 @@ class VerificationLoop:
         self.planner = BudgetPlanner(self.policy)
         self._rounds: dict[str, int] = {}
         self._extra_calls = 0
+        self._pages: dict[int, bytes] = {}
 
     # -- 主流程 -----------------------------------------------------------
-    def run(self, image: bytes, doc_id: str, source: str = "") -> LoopReport:
+    def run(
+        self,
+        document: bytes | str | Path | Document,
+        doc_id: str,
+        source: str = "",
+    ) -> LoopReport:
+        """核验一份文档。
+
+        document 可以是一张图的字节、一个文件路径（图片或 PDF），或者已经
+        加载好的 Document。多页文档逐页解析，区域会记住自己在第几页。
+        """
+
         started = time.time()
         self.planner = BudgetPlanner(self.policy)
         self._rounds = {}
         self._extra_calls = 0
 
-        # 1) 解析
-        page = self.parser.parse_page(image, PROFILE_PRIMARY)
-        regions = self._ensure_primary(page.regions)
+        # 1) 解析（逐页）
+        doc = as_document(document, doc_id=doc_id)
+        self._pages = {page.index: page.png for page in doc.pages}
+        regions: list[Region] = []
+        markdown_parts: list[str] = []
+        for page in doc.pages:
+            parsed = self.parser.parse_page(page.png, PROFILE_PRIMARY)
+            for region in parsed.regions:
+                region.page = page.index
+                regions.append(region)
+            if parsed.markdown:
+                markdown_parts.append(parsed.markdown)
+        regions = self._ensure_primary(regions)
 
         # 2) 给首轮候选打分
-        self._score_with_images(regions, image)
-        self.planner.charge_base(self.policy.cost_model.primary_parse)
+        self._score_with_images(regions, doc)
+        self.planner.charge_base(self.policy.cost_model.primary_parse * doc.page_count)
 
         # 3) 抽字段、定风险
         fields = self._extract(regions)
@@ -155,7 +179,7 @@ class VerificationLoop:
                     self._record(region, decision)
                     continue
 
-                changed = self._execute(region, action, image)
+                changed = self._execute(region, action, doc)
                 self._extra_calls += 1
                 self.planner.spend(region.id, decision.cost)
                 self._rounds[region.id] = self._rounds.get(region.id, 0) + 1
@@ -178,14 +202,15 @@ class VerificationLoop:
             fields=fields,
             risk_policy=self.risk_policy,
             budget_policy=self.policy,
-            markdown=page.markdown,
-            pages=page.meta.get("pages", 1),
+            markdown="\n\n".join(markdown_parts),
+            pages=doc.page_count,
             meta={
                 "profile": PROFILE_PRIMARY.to_dict(),
                 "alt_profile": self.alt_profile.to_dict(),
-                "models": page.meta.get("models", {}),
                 "scenario": self.scenario,
                 "scenario_label": self.scenario_spec.label,
+                "source_kind": doc.kind,
+                "page_count": doc.page_count,
             },
             scenario=self.scenario_spec,
         )
@@ -241,11 +266,11 @@ class VerificationLoop:
                 )
         return regions
 
-    def _score_with_images(self, regions: list[Region], image: bytes) -> None:
+    def _score_with_images(self, regions: list[Region], document: Document) -> None:
         """给所有还没有分数的候选打分。"""
 
         for region in regions:
-            crop = layout_mod.crop(image, region.bbox)
+            crop = layout_mod.crop(self._page_image(region.page), region.bbox)
             for candidate in region.candidates:
                 if candidate.verdict is not Verdict.NOT_SCORED:
                     continue
@@ -255,10 +280,15 @@ class VerificationLoop:
                 candidate.detail = result.detail
                 self.planner.charge_base(self.policy.cost_model.score)
 
-    def _execute(self, region: Region, action: str, image: bytes) -> bool:
+    def _page_image(self, page_index: int) -> bytes:
+        """取某一页的图像。"""
+
+        return self._pages.get(page_index, b"")
+
+    def _execute(self, region: Region, action: str, document: Document) -> bool:
         """执行一个动作。返回区域状态是否发生变化。"""
 
-        crop = layout_mod.crop(image, region.bbox)
+        crop = layout_mod.crop(self._page_image(region.page), region.bbox)
 
         if action == "reparse":
             text = self.parser.parse_region(crop, None, self.alt_profile)

@@ -109,17 +109,20 @@ INVOICE = Scenario(
 CONTRACT = Scenario(
     name="contract",
     label="技术服务合同",
-    description="大小写金额互为印证，靠跨文档与发票比对",
+    description="大写金额与小写金额互为印证，再靠跨文档与发票比对",
     fields=[
         FieldPattern("合同编号", r"合同编号[:：]?\s*([A-Za-z0-9\-]+)"),
         FieldPattern("甲方", r"甲方[（(]?(?:盖章[)）]?)?[:：]?\s*([^\n\r]+)"),
         FieldPattern("乙方", r"乙方[（(]?(?:盖章[)）]?)?[:：]?\s*([^\n\r]+)"),
         FieldPattern("合同金额", r"(?:合同|总|价税)?(?:金额|价款|总价)[:：]?\s*[¥￥]?\s*([\d,]+\.\d{2})"),
+        FieldPattern("合同金额大写", r"合同金额[（(]?大写[)）]?[:：]?\s*([^\n\r]+)"),
         FieldPattern("签署日期", r"签署日期[:：]?\s*(\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日)"),
         FieldPattern("签署日期", r"签订日期[:：]?\s*(\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日)"),
         FieldPattern("付款期限", r"付款期限[:：]?\s*([^\n\r]+)"),
     ],
-    rules=[],
+    rules=[
+        ConsistencyRule("amount_forms", "合同金额", ["合同金额大写"]),
+    ],
 )
 
 # ---------------------------------------------------------------------------
@@ -196,7 +199,7 @@ FINANCIAL_STATEMENT = Scenario(
 PURCHASE_CONTRACT = Scenario(
     name="purchase_contract",
     label="设备采购合同",
-    description="金额 = 数量 × 单价；合同总价 = 金额 + 税额",
+    description="金额 = 数量 × 单价；合同总价 = 金额 + 税额；大写与小写一致",
     fields=[
         FieldPattern("合同编号", r"合同编号[:：]?\s*([A-Za-z0-9\-]+)"),
         FieldPattern("需方", r"需方[（(]?(?:盖章[)）]?)?[:：]?\s*([^\n\r]+)"),
@@ -208,11 +211,13 @@ PURCHASE_CONTRACT = Scenario(
         FieldPattern("税率", r"税率[:：]?\s*(\d+(?:\.\d+)?%)"),
         FieldPattern("税额", r"税额[:：]?\s*[¥￥]?\s*([\d,]+\.\d{2})"),
         FieldPattern("合同总价", r"合同总价[:：]?\s*[¥￥]?\s*([\d,]+\.\d{2})"),
+        FieldPattern("合同总价大写", r"合同总价[（(]?大写[)）]?[:：]?\s*([^\n\r]+)"),
         FieldPattern("签署日期", r"签署日期[:：]?\s*(\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日)"),
     ],
     rules=[
         ConsistencyRule("product", "金额", ["数量", "单价"]),
         ConsistencyRule("sum", "合同总价", ["金额", "税额"]),
+        ConsistencyRule("amount_forms", "合同总价", ["合同总价大写"]),
     ],
     risk_overrides={
         "合同总价": Severity.CRITICAL,

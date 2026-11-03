@@ -650,6 +650,19 @@ def build_purchase_contract() -> tuple[Page, list[dict]]:
                 score=0.95 if cands is None else 0.88,
             )
         )
+    # 大写金额。合同以大写为准，这一行是核验小写有没有抄错的依据。
+    # 放在合同总价正下方，不挪动其它元素。
+    r_total_cn = page.text(
+        (left, 976),
+        "合同总价（大写）：壹拾肆万伍仟叁佰壹拾捌元整",
+        reg(18),
+        fill=INK,
+        candidates=[
+            candidate("合同总价（大写）：壹拾肆万伍仟叁佰壹拾捌元整", "primary", 0.91),
+            candidate("合同总价（大写）：壹拾肆万伍仟叁佰壹拾捌圆整", "reparse-16x", 0.44),
+        ],
+    )
+
     page.line(left, 1006, right, 1006, fill=RULE, width=2)
 
     r_delivery = page.text(
@@ -726,6 +739,11 @@ def build_purchase_contract() -> tuple[Page, list[dict]]:
         {"name": "税率", "value": "13%", "region_ids": [r_tax_rate["id"]]},
         {"name": "税额", "value": "16,718.00", "region_ids": [r_tax["id"]]},
         {"name": "合同总价", "value": "146,318.00", "region_ids": [r_total["id"]]},
+        {
+            "name": "合同总价大写",
+            "value": "壹拾肆万伍仟叁佰壹拾捌元整",
+            "region_ids": [r_total_cn["id"]],
+        },
         {"name": "签署日期", "value": "2026年10月17日", "region_ids": [r_sign_date["id"]]},
     ]
     return page, fields

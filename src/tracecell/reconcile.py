@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
+from .chinese_amount import parse_chinese_amount
 from .scenarios import CROSS_RULES, ConsistencyRule, cross_rules_for
 from .textnorm import (
     normalize,
@@ -317,6 +318,32 @@ def check_sum_consistency(fields: list[FieldValue], rules: list[ConsistencyRule]
                 break
             chosen.extend(group)
         if len(chosen) < len(rule.components):
+            continue
+
+        if rule.kind == "amount_forms":
+            # 大写与小写是同一笔金额的两种写法，比的是数值不是字符串
+            chinese = parse_chinese_amount(chosen[0].value)
+            arabic = normalize_money(total_field.value)
+            if chinese is None or arabic is None:
+                continue
+            difference = float(chinese - Decimal(arabic))
+            if abs(difference) <= rule.tolerance:
+                continue
+            findings.append(
+                Finding(
+                    kind="sum_mismatch",
+                    severity=Severity.CRITICAL,
+                    message=(
+                        f"大写与小写金额不一致：大写「{chosen[0].value}」为 {chinese:,.2f}，"
+                        f"小写「{total_field.value}」为 {float(Decimal(arabic)):,.2f}，"
+                        f"差额 {difference:+,.2f}"
+                    ),
+                    region_ids=[rid for c in chosen for rid in c.region_ids]
+                    + list(total_field.region_ids),
+                    field_names=[c.name for c in chosen] + [total_field.name],
+                    suggestion="合同以大写金额为准，核对原件上大写那一遍",
+                )
+            )
             continue
 
         if rule.kind == "product":
