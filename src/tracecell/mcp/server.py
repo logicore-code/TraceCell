@@ -23,6 +23,9 @@ from typing import Any, Callable
 
 from .. import __version__
 from ..agent.loop import VerificationLoop
+from ..batch import discover, run_batch, write_summary
+from ..export import export_bundle, export_csv, export_excel, export_json, export_markdown
+from ..feedback import apply_all, load_feedback, to_labeled_samples
 from ..calibration import calibrate, load_samples
 from ..extractors import build_extractor
 from ..ledger import export_csv, export_markdown, ledger_summary
@@ -144,6 +147,88 @@ class TraceCellService:
             "findings": [f.to_dict() for f in findings_from_reconciliation(result)],
         }
 
+    def check_consistency(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        """对一份账本跑单据内部的勾稽校验。"""
+
+        doc_id = arguments.get("doc_id")
+        if not doc_id:
+            raise ToolError("缺少参数 doc_id")
+        ledger = self.ledgers.get(doc_id) or self._load_ledger(doc_id)
+        from ..reconcile import check_sum_consistency
+        from ..scenarios import get_scenario
+
+        scenario = str(ledger.meta.get("scenario", "invoice"))
+        rules = get_scenario(scenario).rules
+        findings = check_sum_consistency(ledger.fields, rules)
+        return {
+            "doc_id": doc_id,
+            "scenario": scenario,
+            "rules": [
+                {"kind": r.kind, "total": r.total, "components": r.components} for r in rules
+            ],
+            "checked": len(rules),
+            "mismatches": [f.to_dict() for f in findings],
+            "consistent": not findings,
+        }
+
+    def batch_verify(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        """批量核验一个目录里的文档。"""
+
+        paths = arguments.get("paths") or []
+        if not paths:
+            raise ToolError("缺少参数 paths")
+        files = discover([str(p) for p in paths])
+        if not files:
+            return {"total": 0, "items": [], "note": "目录里没有可处理的文档"}
+
+        def process(path, scenario):
+            loop = VerificationLoop(
+                parser=ReplayParser(self.session, doc_id_for(self.session, path)),
+                scorer=ReplayScorer(self.session, doc_id_for(self.session, path)),
+                escalator=ReplayEscalator(self.session, doc_id_for(self.session, path)),
+                extractor=build_extractor(scenario),
+                scenario=scenario,
+            )
+            report = loop.run(str(path), path.stem, str(path))
+            self.ledgers[report.ledger.doc_id] = report.ledger
+            return report.ledger
+
+        summary = run_batch(files, process)
+        return summary.to_dict()
+
+    def submit_review(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        """提交一条人工复核结论，回灌到账本。
+
+        回灌之后，这一条还会变成标定样本——人工复核的力气直接沉淀成
+        阈值标定的数据。
+        """
+
+        doc_id = arguments.get("doc_id")
+        region_id = arguments.get("region_id")
+        verdict = arguments.get("verdict", "correct")
+        if not doc_id or not region_id:
+            raise ToolError("需要 doc_id 和 region_id")
+        ledger = self.ledgers.get(doc_id) or self._load_ledger(doc_id)
+        from ..feedback import ReviewFeedback
+
+        item = ReviewFeedback(
+            doc_id=doc_id,
+            region_id=region_id,
+            verdict=verdict,
+            corrected_text=arguments.get("corrected_text", ""),
+            reviewer=arguments.get("reviewer", ""),
+            note=arguments.get("note", ""),
+        )
+        apply_all(ledger, [item])
+        samples = to_labeled_samples([item], [ledger])
+        return {
+            "doc_id": doc_id,
+            "region_id": region_id,
+            "verdict": verdict,
+            "applied": True,
+            "label_samples": [s.to_dict() for s in samples],
+        }
+
     def calibrate_threshold(self, arguments: dict[str, Any]) -> dict[str, Any]:
         path = arguments.get("samples_path")
         target = float(arguments.get("target_accuracy", 0.995))
@@ -246,6 +331,55 @@ TOOLS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "tracecell_check_consistency",
+        "description": (
+            "对一份账本跑单据内部的勾稽校验：明细加总、乘法关系、大写小写金额。"
+            "返回不一致的项，以及每一条规则本身。"
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {"doc_id": {"type": "string"}},
+            "required": ["doc_id"],
+        },
+    },
+    {
+        "name": "tracecell_batch_verify",
+        "description": (
+            "批量核验一个目录里的文档（png/jpg/pdf），按文件名推断场景类型。"
+            "返回每份的路由结论、问题数与待人工格数，以及一份汇总。"
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "paths": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "文件或目录路径列表",
+                }
+            },
+            "required": ["paths"],
+        },
+    },
+    {
+        "name": "tracecell_submit_review",
+        "description": (
+            "提交一条人工复核结论（对/错/无法辨认），回灌到账本：确认对的直接放行，"
+            "确认错的纠正后作为新候选。同时产出可用的标定样本。"
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "doc_id": {"type": "string"},
+                "region_id": {"type": "string"},
+                "verdict": {"type": "string", "enum": ["correct", "wrong", "unreadable"]},
+                "corrected_text": {"type": "string"},
+                "reviewer": {"type": "string"},
+                "note": {"type": "string"},
+            },
+            "required": ["doc_id", "region_id"],
+        },
+    },
+    {
         "name": "tracecell_calibrate_threshold",
         "description": (
             "用人工标注样本标定自动放行阈值：在目标自动通过准确率下，"
@@ -263,6 +397,14 @@ TOOLS: list[dict[str, Any]] = [
 ]
 
 
+def doc_id_for(session: ReplaySession, path) -> str:
+    """批量时按文件名反查会话里的文档标识。"""
+
+    name = str(path)
+    found = session.find_by_source(name)
+    return found or Path(name).stem
+
+
 class McpServer:
     """极简 MCP stdio 服务端。"""
 
@@ -275,6 +417,9 @@ class McpServer:
             "tracecell_export_ledger": service.export_ledger,
             "tracecell_reconcile_documents": service.reconcile_documents,
             "tracecell_calibrate_threshold": service.calibrate_threshold,
+            "tracecell_check_consistency": service.check_consistency,
+            "tracecell_batch_verify": service.batch_verify,
+            "tracecell_submit_review": service.submit_review,
         }
 
     def handle(self, message: dict[str, Any]) -> dict[str, Any] | None:

@@ -22,8 +22,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
+from ..audit import AuditLog
 from ..budget import BudgetPlanner, CellState
 from ..budget import Decision as PlanDecision
+from ..degrade import DegradationLog
 from ..extractors import build_extractor
 from ..ledger import build_ledger, collect_findings
 from ..policy import BudgetPolicy, RiskPolicy
@@ -50,6 +52,7 @@ from ..types import (
     Decision,
     DocumentLedger,
     FieldValue,
+    Finding,
     Region,
     Severity,
     Status,
@@ -66,6 +69,8 @@ class LoopReport:
     ledger: DocumentLedger
     elapsed: float = 0.0
     extra_calls: int = 0
+    audit: AuditLog | None = None
+    degradation: DegradationLog | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -90,6 +95,8 @@ class VerificationLoop:
         extractor: Callable[[list[Region]], list[FieldValue]] | None = None,
         scenario: str = "invoice",
         alt_profile: ParseProfile = PROFILE_ALT,
+        audit: AuditLog | None = None,
+        degradation: DegradationLog | None = None,
     ) -> None:
         self.parser = parser
         self.scorer = scorer
@@ -104,6 +111,8 @@ class VerificationLoop:
         self._rounds: dict[str, int] = {}
         self._extra_calls = 0
         self._pages: dict[int, bytes] = {}
+        self.audit = audit or AuditLog()
+        self.degradation = degradation or DegradationLog()
 
     # -- 主流程 -----------------------------------------------------------
     def run(
@@ -128,6 +137,7 @@ class VerificationLoop:
         self._pages = {page.index: page.png for page in doc.pages}
         regions: list[Region] = []
         markdown_parts: list[str] = []
+        self.audit.record("parse", doc_id, pages=doc.page_count, source_kind=doc.kind)
         for page in doc.pages:
             parsed = self.parser.parse_page(page.png, PROFILE_PRIMARY)
             for region in parsed.regions:
@@ -139,6 +149,9 @@ class VerificationLoop:
 
         # 2) 给首轮候选打分
         self._score_with_images(regions, doc)
+        self.audit.record(
+            "score", doc_id, regions=len(regions), candidates=sum(len(r.candidates) for r in regions)
+        )
         self.planner.charge_base(self.policy.cost_model.primary_parse * doc.page_count)
 
         # 3) 抽字段、定风险
@@ -168,6 +181,15 @@ class VerificationLoop:
 
                 decision = self.planner.decide(state)
                 action = decision.action
+                self.audit.record(
+                    "decision",
+                    doc_id,
+                    region=region.id,
+                    action=action,
+                    confidence=round(state.confidence, 4),
+                    reason=decision.reason,
+                    cost=decision.cost,
+                )
 
                 if action == "accept":
                     region.status = Status.ACCEPTED
@@ -180,6 +202,9 @@ class VerificationLoop:
                     continue
 
                 changed = self._execute(region, action, doc)
+                self.audit.record(
+                    "action", doc_id, region=region.id, action=action, changed=changed
+                )
                 self._extra_calls += 1
                 self.planner.spend(region.id, decision.cost)
                 self._rounds[region.id] = self._rounds.get(region.id, 0) + 1
@@ -226,6 +251,21 @@ class VerificationLoop:
         ledger.budget = self._budget_report(regions, routing)
         ledger.findings = collect_findings(ledger.fields, region_map, self.policy)
 
+        # 降级要如实写进账本，不能悄悄按低分处理
+        if self.degradation.failed:
+            ledger.meta["degradation"] = self.degradation.to_dict()
+            ledger.findings.append(
+                Finding(
+                    kind="degraded",
+                    severity=Severity.HIGH,
+                    message=(
+                        f"本次核验有降级：{'、'.join(self.degradation.components())} 不可用，"
+                        f"相关区域一律转人工，不按低分放行"
+                    ),
+                    suggestion="检查对应模型服务后重新核验",
+                )
+            )
+
         # 8) 单据内部的勾稽校验
         rules = self.scenario_spec.rules
         consistency_findings = check_sum_consistency(ledger.fields, rules)
@@ -243,6 +283,8 @@ class VerificationLoop:
             ledger=ledger,
             elapsed=time.time() - started,
             extra_calls=self._extra_calls,
+            audit=self.audit,
+            degradation=self.degradation,
         )
 
     # -- 内部动作 ---------------------------------------------------------

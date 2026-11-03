@@ -17,6 +17,11 @@ import sys
 from pathlib import Path
 
 from . import __version__
+from .audit import AuditLog
+from .batch import discover, run_batch, write_summary
+from .degrade import DegradationLog, ResilientEscalator, ResilientParser, ResilientScorer
+from .export import export_bundle, export_csv, export_excel, export_json, export_markdown
+from .feedback import apply_all, load_feedback, save_feedback, to_labeled_samples
 from .agent.loop import VerificationLoop
 from .calibration import calibrate, load_samples, per_category_stats
 from .extractors import build_extractor
@@ -51,7 +56,12 @@ def _build_components(args, doc_id: str):
 
     session = _load_session(args.session)
     if doc_id not in session.doc_ids():
-        raise SystemExit(f"回放会话里没有文档 {doc_id}，可选：{', '.join(session.doc_ids())}")
+        found = session.find_by_source(doc_id)
+        if found is None:
+            raise SystemExit(
+                f"回放会话里没有文档 {doc_id}，可选：{', '.join(session.doc_ids())}"
+            )
+        doc_id = found
     document = session.document(doc_id) or {}
     scenario = document.get("schema") or args.scenario
     parser = ReplayParser(session, doc_id)
@@ -63,14 +73,19 @@ def _build_components(args, doc_id: str):
 def _build_loop(args, doc_id: str, scenario: str | None = None) -> VerificationLoop:
     parser, scorer, escalator, detected = _build_components(args, doc_id)
     scenario = scenario or detected
+    # 三个模型都套上降级包装：任何一个挂了都不至于整份核验崩掉，
+    # 具体降级行为写进账本的 degradation 字段。
+    degradation = DegradationLog()
     return VerificationLoop(
-        parser=parser,
-        scorer=scorer,
-        escalator=escalator,
+        parser=ResilientParser(parser, degradation),
+        scorer=ResilientScorer(scorer, degradation),
+        escalator=ResilientEscalator(escalator, degradation),
         policy=BudgetPolicy(),
         risk_policy=RiskPolicy(),
         extractor=build_extractor(scenario),
         scenario=scenario,
+        audit=AuditLog(),
+        degradation=degradation,
     )
 
 
@@ -106,9 +121,30 @@ def cmd_parse(args) -> int:
         )
 
     if args.out:
-        Path(args.out).write_text(ledger.to_json(), encoding="utf-8")
-        print(f"账本已保存：{args.out}", file=sys.stderr)
+        _write_output(ledger, args.out, args.format)
+        print(f"已保存：{args.out}", file=sys.stderr)
+    if args.audit_out:
+        Path(args.audit_out).write_text(report.audit.to_json(), encoding="utf-8")
+        print(f"轨迹已保存：{args.audit_out}", file=sys.stderr)
     return 0
+
+
+def _write_output(ledger, out_path: str, fmt: str) -> None:
+    """按格式写出账本。"""
+
+    target = Path(out_path)
+    if fmt == "csv":
+        target.write_text(export_csv(ledger), encoding="utf-8")
+    elif fmt == "xlsx":
+        target.write_bytes(export_excel(ledger))
+    elif fmt == "json":
+        target.write_text(export_json(ledger), encoding="utf-8")
+    elif fmt == "bundle":
+        target.mkdir(parents=True, exist_ok=True)
+        for name, content in export_bundle(ledger).items():
+            (target / name).write_bytes(content)
+    else:
+        target.write_text(export_markdown(ledger), encoding="utf-8")
 
 
 def cmd_demo(args) -> int:
@@ -163,6 +199,73 @@ def cmd_case(args) -> int:
             print()
             for note in result.notes:
                 print(f"  · {note}")
+    return 0
+
+
+def cmd_batch(args) -> int:
+    """批量核验一个目录里的文档。"""
+
+    files = discover(args.paths)
+    if not files:
+        print("没有找到可处理的文档（支持 png/jpg/webp/pdf）", file=sys.stderr)
+        return 1
+
+    def process(path: Path, scenario: str):
+        loop = _build_loop(args, path.stem, scenario)
+        report = loop.run(str(path), path.stem, str(path))
+        return report.ledger
+
+    summary = run_batch(files, process, default_scenario=args.scenario)
+    print(f"共 {len(summary.items)} 份，成功 {len(summary.ok)}，失败 {len(summary.failed)}")
+    for item in summary.items:
+        if item.ledger is None:
+            print(f"  ✗ {item.source}：{item.error}")
+        else:
+            print(
+                f"  {'✓' if item.ledger.verdict != 'full_review' else '!'} {item.source}"
+                f"  {item.ledger.verdict}  字段 {len(item.ledger.fields)}"
+                f"  问题 {len(item.ledger.findings)}  待人工 {len(item.ledger.review_queue)}"
+            )
+
+    if args.out:
+        out_dir = Path(args.out)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        for item in summary.ok:
+            target = out_dir / f"{item.doc_id}.json"
+            target.write_text(export_json(item.ledger), encoding="utf-8")
+        write_summary(summary, out_dir / "summary.json")
+        print(f"\n账本与汇总已写入 {out_dir}", file=sys.stderr)
+    if args.summary_out:
+        write_summary(summary, args.summary_out)
+    return 0
+
+
+def cmd_feedback(args) -> int:
+    """把人工复核结论回灌到账本，并导出标定样本。"""
+
+    from .types import DocumentLedger
+
+    ledger = DocumentLedger.from_json(Path(args.ledger).read_text(encoding="utf-8"))
+    items = load_feedback(args.feedback)
+    applied = [item for item in items if item.doc_id == ledger.doc_id]
+    if not applied:
+        print(f"没有针对 {ledger.doc_id} 的复核记录", file=sys.stderr)
+        return 1
+
+    apply_all(ledger, applied)
+    if args.out:
+        Path(args.out).write_text(export_json(ledger), encoding="utf-8")
+        print(f"已回灌并保存：{args.out}", file=sys.stderr)
+
+    if args.labels_out:
+        samples = to_labeled_samples(applied, [ledger])
+        Path(args.labels_out).write_text(
+            json.dumps([s.to_dict() for s in samples], ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        print(
+            f"已导出 {len(samples)} 条标定样本：{args.labels_out}", file=sys.stderr
+        )
     return 0
 
 
@@ -289,8 +392,13 @@ def build_parser() -> argparse.ArgumentParser:
     p_parse = sub.add_parser("parse", help="解析并核验一份文档")
     p_parse.add_argument("image")
     p_parse.add_argument("--doc-id", default=None)
-    p_parse.add_argument("--format", default="markdown", choices=["markdown", "json", "csv"])
-    p_parse.add_argument("--out", default=None, help="把账本 JSON 存到这里")
+    p_parse.add_argument(
+        "--format",
+        default="markdown",
+        choices=["markdown", "json", "csv", "xlsx", "bundle"],
+    )
+    p_parse.add_argument("--out", default=None, help="输出路径（bundle 格式时是目录）")
+    p_parse.add_argument("--audit-out", default=None, help="把执行轨迹存到这里")
     add_provider_args(p_parse)
     p_parse.set_defaults(func=cmd_parse)
 
@@ -307,6 +415,20 @@ def build_parser() -> argparse.ArgumentParser:
     p_case.add_argument("--format", default="text", choices=["text", "json"])
     add_provider_args(p_case)
     p_case.set_defaults(func=cmd_case)
+
+    p_batch = sub.add_parser("batch", help="批量核验一个目录里的文档")
+    p_batch.add_argument("paths", nargs="+", help="文件或目录")
+    p_batch.add_argument("--out", default=None, help="账本与汇总的输出目录")
+    p_batch.add_argument("--summary-out", default=None, help="只导出汇总 JSON")
+    add_provider_args(p_batch)
+    p_batch.set_defaults(func=cmd_batch)
+
+    p_fb = sub.add_parser("feedback", help="把人工复核结论回灌到账本")
+    p_fb.add_argument("ledger", help="账本 JSON 路径")
+    p_fb.add_argument("--feedback", required=True, help="复核记录 JSON 路径")
+    p_fb.add_argument("--out", default=None, help="回灌后的账本输出路径")
+    p_fb.add_argument("--labels-out", default=None, help="导出标定样本的路径")
+    p_fb.set_defaults(func=cmd_feedback)
 
     p_scen = sub.add_parser("scenarios", help="列出支持的核验场景")
     p_scen.set_defaults(func=cmd_scenarios)

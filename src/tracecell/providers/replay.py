@@ -84,6 +84,28 @@ class ReplaySession:
     def doc_ids(self) -> list[str]:
         return list(self.documents)
 
+    def find_by_source(self, filename: str) -> str | None:
+        """按源文件名反查文档标识。
+
+        批量处理时文件名和会话里的标识未必一致（contract_001.png 对应的
+        标识可能是 contract-001），对不上就按文件名找。
+        """
+
+        target = Path(str(filename)).name
+        for doc_id, document in self.documents.items():
+            source = str(document.get("source", ""))
+            if source and Path(source).name == target:
+                return doc_id
+        # 再退一步：只比主干名字，去掉下划线和短横线的差别
+        stem = Path(target).stem.replace("_", "").replace("-", "").lower()
+        for doc_id, document in self.documents.items():
+            source = str(document.get("source", ""))
+            if source:
+                other = Path(source).stem.replace("_", "").replace("-", "").lower()
+                if other == stem:
+                    return doc_id
+        return None
+
 
 class ReplayParser:
     """回放解析结果。"""

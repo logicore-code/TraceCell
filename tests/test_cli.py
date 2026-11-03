@@ -76,6 +76,8 @@ class TestCli:
                     doc_id,
                     "--session",
                     SESSIONS,
+                    "--format",
+                    "json",
                     "--out",
                     str(path),
                 ]

@@ -20,8 +20,10 @@ from fastapi.staticfiles import StaticFiles
 from .. import __version__
 from ..agent.loop import VerificationLoop
 from ..extractors import build_extractor
+from ..reconcile import reconcile
 from ..scenarios import list_scenarios
-from ..ledger import export_csv, export_markdown, ledger_summary
+from ..export import export_csv, export_excel
+from ..ledger import export_markdown, ledger_summary
 from ..providers import layout as layout_mod
 from ..providers.jev import HttpJevScorer
 from ..providers.ocr import OpenAICompatOcr
@@ -112,6 +114,10 @@ def create_app(provider: str = "replay") -> FastAPI:
     def health() -> dict[str, Any]:
         return {"status": "ok", "version": __version__, "provider": provider}
 
+    @app.get("/api/scenarios")
+    def scenarios() -> list[dict[str, Any]]:
+        return list_scenarios()
+
     @app.get("/api/samples")
     def samples() -> list[dict[str, Any]]:
         session = merged
@@ -160,6 +166,74 @@ def create_app(provider: str = "replay") -> FastAPI:
         payload = report.ledger.to_dict()
         payload["summary"] = ledger_summary(report.ledger)
         return JSONResponse(payload)
+
+    @app.get("/api/reconcile")
+    def reconcile_all() -> JSONResponse:
+        """把所有样例的账本放在一起做跨文档对账。"""
+
+        ledgers = []
+        for doc_id in merged.doc_ids():
+            document = merged.document(doc_id) or {}
+            try:
+                report = build_loop(doc_id, document.get("schema", "invoice")).run(
+                    _read_sample_image(document.get("source", "")), doc_id,
+                    document.get("source", ""),
+                )
+            except HTTPException:
+                continue
+            ledgers.append(report.ledger)
+            store.put(report.ledger, _read_sample_image(document.get("source", "")), {})
+        result = reconcile(ledgers)
+        return JSONResponse(result.to_dict())
+
+    @app.get("/api/export/{doc_id}.xlsx")
+    def export_xlsx(doc_id: str) -> Response:
+        """导出 Excel 工作簿。"""
+
+        ledger_obj = store.ledgers.get(doc_id)
+        if ledger_obj is None:
+            raise HTTPException(status_code=404, detail="账本尚未生成")
+        return Response(
+            content=export_excel(ledger_obj),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f'attachment; filename="{doc_id}.xlsx"'
+            },
+        )
+
+    @app.get("/api/export/{doc_id}.csv")
+    def export_csv_endpoint(doc_id: str) -> Response:
+        ledger_obj = store.ledgers.get(doc_id)
+        if ledger_obj is None:
+            raise HTTPException(status_code=404, detail="账本尚未生成")
+        return Response(
+            content=export_csv(ledger_obj).encode("utf-8-sig"),
+            media_type="text/csv; charset=utf-8",
+            headers={"Content-Disposition": f'attachment; filename="{doc_id}.csv"'},
+        )
+
+    @app.post("/api/feedback")
+    async def submit_feedback(payload: dict[str, Any]) -> JSONResponse:
+        """提交人工复核结论，回灌到账本。"""
+
+        from ..feedback import ReviewFeedback, apply_all
+
+        doc_id = payload.get("doc_id")
+        if not doc_id:
+            raise HTTPException(status_code=400, detail="缺少 doc_id")
+        ledger_obj = store.ledgers.get(doc_id)
+        if ledger_obj is None:
+            raise HTTPException(status_code=404, detail="账本尚未生成")
+        item = ReviewFeedback(
+            doc_id=doc_id,
+            region_id=payload.get("region_id", ""),
+            verdict=payload.get("verdict", "correct"),
+            corrected_text=payload.get("corrected_text", ""),
+            reviewer=payload.get("reviewer", ""),
+            note=payload.get("note", ""),
+        )
+        apply_all(ledger_obj, [item])
+        return JSONResponse({"applied": True, "doc_id": doc_id})
 
     @app.get("/api/checklist/{doc_id}")
     def checklist(doc_id: str) -> list[dict[str, Any]]:
