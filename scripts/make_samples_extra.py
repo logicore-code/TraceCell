@@ -187,6 +187,47 @@ class Page:
         )
         return self._record(merged, label + value, category, candidates, score, pad)
 
+    def table_row(
+        self,
+        x0: float,
+        x1: float,
+        y: float,
+        name: str,
+        qty: str,
+        price: str,
+        amount: str,
+        font_obj,
+        fill=INK,
+        candidates=None,
+        score=0.95,
+        pad=3,
+    ):
+        """明细表的一行：品名、数量、单价、金额。
+
+        整行记成**一个**区域，文本是四个单元格用全角空格连起来
+        （"智能网关设备　50　2,572.00　128,600.00"），这样按表格规格
+        拆列时不用依赖版面坐标。
+        """
+
+        columns = [
+            (x0 + 14, name, "la"),
+            (x0 + 470, qty, "ra"),
+            (x0 + 700, price, "ra"),
+            (x1 - 14, amount, "ra"),
+        ]
+        boxes = []
+        for x, content, anchor in columns:
+            self.draw.text((x, y), content, font=font_obj, fill=fill, anchor=anchor)
+            boxes.append(self.draw.textbbox((x, y), content, font=font_obj, anchor=anchor))
+        merged = (
+            min(b[0] for b in boxes),
+            min(b[1] for b in boxes),
+            max(b[2] for b in boxes),
+            max(b[3] for b in boxes),
+        )
+        text = f"{name}　{qty}　{price}　{amount}"
+        return self._record(merged, text, "table", candidates, score, pad)
+
     # -- 区域登记 ---------------------------------------------------------
     def _record(self, box, content, category, candidates, score, pad):
         left = max(0, int(round(box[0])) - pad)
@@ -528,32 +569,41 @@ CONTRACT_MD = """# 设备采购合同
 
 
 def build_purchase_contract() -> tuple[Page, list[dict]]:
+    """设备采购合同。
+
+    明细是三行表格。里面埋了一处数字转置：边缘网关设备的金额印成了
+    26,600.00（正确值 23,600.00），于是
+
+      · 行内勾稽（20 × 1,180.00 = 23,600.00）不通过
+      · 明细合计不通过（印的合计是按正确行算的 156,700.00）
+
+    两处都能抓到同一处错误。
+    """
+
     page = Page()
     left, right = 130, 1098
 
     # 标题
     page.text_spaced(
-        620,
-        130,
+        (left + right) / 2,
+        150,
         "设备采购合同",
-        reg(42, bold=True),
+        reg(34, bold=True),
         fill=INK,
-        spacing=16,
-        candidates=[
-            candidate("设备采购合同", "primary", 0.99),
-            candidate("设备采购合同", "reparse-16x", 0.97),
-        ],
+        spacing=10.0,
+        score=0.98,
     )
+    page.line(left, 214, right, 214, fill=RULE, width=2)
+
+    # 合同编号
     r_no = page.text(
-        (right, 214),
+        (right, 236),
         "合同编号：CG-2026-0917",
-        reg(21),
+        reg(20),
         fill=INK_SOFT,
         anchor="ra",
-        candidates=[candidate("合同编号：CG-2026-0917", "primary", 0.98)],
+        candidates=[candidate("合同编号：CG-2026-0917", "primary", 0.97)],
     )
-    page.line(left, 262, right, 262, fill=FRAME_INK, width=2)
-    page.line(left, 270, right, 270, fill=RULE_LIGHT, width=1)
 
     # 需方 / 供方
     r_buyer = page.text(
@@ -561,112 +611,141 @@ def build_purchase_contract() -> tuple[Page, list[dict]]:
         "需方（盖章）：杭州明远网络科技有限公司",
         reg(21),
         fill=INK,
-        candidates=[candidate("需方（盖章）：杭州明远网络科技有限公司", "primary", 0.98)],
+        candidates=[
+            candidate("需方（盖章）：杭州明远网络科技有限公司", "primary", 0.96)
+        ],
     )
     r_seller = page.text(
-        (660, 300),
+        (left, 352),
         "供方（盖章）：南京海川软件股份有限公司",
         reg(21),
         fill=INK,
-        candidates=[candidate("供方（盖章）：南京海川软件股份有限公司", "primary", 0.98)],
+        candidates=[
+            candidate("供方（盖章）：南京海川软件股份有限公司", "primary", 0.96)
+        ],
     )
-    page.line(left, 364, right, 364, fill=RULE_LIGHT, width=1)
+    page.line(left, 406, right, 406, fill=RULE_LIGHT, width=1)
 
-    # 明细表
-    page.line(left, 404, right, 404, fill=RULE, width=2)
-    page.text(
-        (left + 14, 424),
-        "项目",
-        reg(20, bold=True),
-        fill=INK,
-        category="table",
-        candidates=[candidate("项目", "primary", 0.97)],
-    )
-    page.text(
-        (right, 424),
-        "内容",
-        reg(20, bold=True),
-        fill=INK,
-        anchor="ra",
-        category="table",
-        candidates=[candidate("内容", "primary", 0.97)],
-    )
-    page.line(left, 466, right, 466, fill=RULE_LIGHT, width=1)
+    # 明细表头
+    col_qty = left + 470
+    col_price = left + 700
+    head_y = 436
+    page.text((left + 14, head_y), "品名", reg(20, bold=True), fill=INK, record=False)
+    page.text((col_qty, head_y), "数量", reg(20, bold=True), fill=INK, anchor="ra", record=False)
+    page.text((col_price, head_y), "单价", reg(20, bold=True), fill=INK, anchor="ra", record=False)
+    page.text((right - 14, head_y), "金额", reg(20, bold=True), fill=INK, anchor="ra", record=False)
+    page.line(left, 486, right, 486, fill=RULE, width=1)
 
-    rows = [
-        ("品名：", "智能网关设备", 496, False, False, 21, None),
-        ("数量：", "50 台", 570, False, False, 21, None),
-        ("单价：", "¥2,572.00", 644, False, False, 21, None),
-        (
-            "金额：",
-            "¥128,600.00",
-            718,
-            False,
-            True,
-            19,
-            [
-                candidate("金额：¥128,600.00", "primary", 0.88),
-                candidate("金额：¥128,600.00", "reparse-16x", 0.37),
-            ],
-        ),
-        ("税率：", "13%", 792, False, False, 21, None),
-        ("税额：", "¥16,718.00", 866, False, False, 21, None),
-        (
-            "合同总价：",
-            "¥146,318.00",
-            940,
-            True,
-            False,
-            22,
-            [
-                candidate("合同总价：¥146,318.00", "primary", 0.61),
-                candidate("合同总价：¥145,318.00", "reparse-16x", 0.18),
-                candidate(
-                    "合同总价：¥146,318.OO",
-                    "reparse-16x",
-                    None,
-                    verdict="not_scored",
-                    detail="Jev 评分服务超时，本轮未返回分数",
-                ),
-            ],
-        ),
+    # 三行明细
+    item_rows = [
+        ("智能网关设备", "50", "2,572.00", "128,600.00", True, None),
+        ("边缘网关设备", "20", "1,180.00", "26,600.00", False, "数量×单价=23,600.00，这里印成了 26,600.00"),
+        ("安装配件", "100", "45.00", "4,500.00", True, None),
     ]
-
-    page.line(left, 928, right, 928, fill=RULE, width=2)
-
     row_regions = []
-    for label, value, y, bold, faint, size, cands in rows:
-        fill = INK_FAINT if faint else INK
+    y = 512
+    for name, qty, price, amount, clean, note in item_rows:
+        fill = INK if clean else INK_FAINT
+        candidates = None
+        if clean:
+            candidates = [
+                candidate(f"{name}　{qty}　{price}　{amount}", "primary", 0.93),
+                candidate(f"{name}　{qty}　{price}　{amount}", "reparse-16x", 0.86),
+            ]
+        else:
+            # OCR 把印错的 26,600.00 读得很确定——它确实就印在那儿。
+            # 抓它靠的不是模型，是行内算术。
+            candidates = [
+                candidate(f"{name}　{qty}　{price}　{amount}", "primary", 0.83),
+                candidate(f"{name}　{qty}　{price}　{'23,600.00'}", "reparse-16x", 0.44),
+            ]
         row_regions.append(
-            page.kv_row(
+            page.table_row(
                 left,
                 right,
                 y,
-                label,
-                value,
-                reg(size, bold=bold),
+                name,
+                qty,
+                price,
+                amount,
+                reg(20),
                 fill=fill,
-                candidates=cands,
-                score=0.95 if cands is None else 0.88,
+                candidates=candidates,
+                score=0.93 if clean else 0.83,
             )
         )
-    # 大写金额。合同以大写为准，这一行是核验小写有没有抄错的依据。
-    # 放在合同总价正下方，不挪动其它元素。
-    r_total_cn = page.text(
-        (left, 976),
-        "合同总价（大写）：壹拾肆万伍仟叁佰壹拾捌元整",
-        reg(18),
+        y += 62
+    page.line(left, y - 14, right, y - 14, fill=RULE, width=1)
+
+    # 金额合计
+    y += 6
+    r_subtotal = page.kv_row(
+        left,
+        right,
+        y,
+        "金额合计：",
+        "¥156,700.00",
+        reg(21),
+        value_font=reg(21, bold=True),
         fill=INK,
         candidates=[
-            candidate("合同总价（大写）：壹拾肆万伍仟叁佰壹拾捌元整", "primary", 0.91),
-            candidate("合同总价（大写）：壹拾肆万伍仟叁佰壹拾捌圆整", "reparse-16x", 0.44),
+            candidate("金额合计：¥156,700.00", "primary", 0.95),
+            candidate("金额合计：¥156,700.00", "reparse-16x", 0.91),
         ],
     )
 
-    page.line(left, 1006, right, 1006, fill=RULE, width=2)
+    # 税额
+    y += 62
+    r_tax_rate = page.kv_row(
+        left,
+        right,
+        y,
+        "税率：",
+        "13%",
+        reg(21),
+        fill=INK,
+        candidates=[
+            candidate("税率：13%", "primary", 0.96),
+            candidate("税率：13%", "reparse-16x", 0.94),
+        ],
+    )
 
+    # 合同总价（小写）
+    y += 62
+    r_total = page.kv_row(
+        left,
+        right,
+        y,
+        "合同总价：",
+        "¥177,071.00",
+        reg(22),
+        value_font=reg(22, bold=True),
+        fill=INK,
+        candidates=[
+            candidate("合同总价：¥177,071.00", "primary", 0.94),
+            candidate("合同总价：¥177,071.00", "reparse-16x", 0.90),
+        ],
+    )
+
+    # 合同总价（大写）。放���面，不挪动别的元素。
+    y += 56
+    r_total_cn = page.text(
+        (left + 14, y),
+        "合同总价（大写）：壹拾柒万柒仟零柒拾壹元整",
+        reg(18),
+        fill=INK,
+        candidates=[
+            candidate("合同总价（大写）：壹拾柒万柒仟零柒拾壹元整", "primary", 0.91),
+            candidate("合同总价（大写）：壹拾柒万柒仟零柒拾壹圆整", "reparse-16x", 0.44),
+        ],
+    )
+
+    page.line(left, y + 48, right, y + 48, fill=RULE, width=1)
+
+    # 交付方式
+    y += 82
     r_delivery = page.text(
-        (left, 1046),
+        (left, y),
         "交付方式：合同生效后 30 日内一次性交付至需方指定地点",
         reg(21),
         fill=INK,
@@ -676,11 +755,11 @@ def build_purchase_contract() -> tuple[Page, list[dict]]:
     )
 
     # 签署区
-    page.line(left, 1100, right, 1100, fill=RULE_LIGHT, width=1)
-    page.text((left, 1120), "需方（签字）：", reg(20), fill=INK_SOFT, score=0.93, record=False)
-    page.text((660, 1120), "供方（签字）：", reg(20), fill=INK_SOFT, score=0.93, record=False)
+    page.line(left, y + 60, right, y + 60, fill=RULE_LIGHT, width=1)
+    page.text((left, y + 80), "需方（签字）：", reg(20), fill=INK_SOFT, score=0.93, record=False)
+    page.text((660, y + 80), "供方（签字）：", reg(20), fill=INK_SOFT, score=0.93, record=False)
 
-    seal_buyer = draw_seal(page, 300, 1300, 96, "杭州明远网络科技有限公司", "合同专用章")
+    seal_buyer = draw_seal(page, 300, y + 260, 96, "杭州明远网络科技有限公司", "合同专用章")
     page.seal_region(
         seal_buyer,
         "杭州明远网络科技有限公司 合同专用章",
@@ -689,7 +768,7 @@ def build_purchase_contract() -> tuple[Page, list[dict]]:
             candidate("杭州明远网络科技有限公司 合同专用章", "reparse-16x", 0.91),
         ],
     )
-    seal_seller = draw_seal(page, 952, 1300, 104, "南京海川软件股份有限公司", "合同专用章")
+    seal_seller = draw_seal(page, 952, y + 260, 104, "南京海川软件股份有限公司", "合同专用章")
     page.seal_region(
         seal_seller,
         "南京海川软件股份有限公司 合同专用章",
@@ -700,16 +779,16 @@ def build_purchase_contract() -> tuple[Page, list[dict]]:
     )
 
     r_sign_date = page.text(
-        (left, 1480),
+        (left, y + 440),
         "签署日期：2026年10月17日",
         reg(21),
         fill=INK,
         candidates=[candidate("签署日期：2026年10月17日", "primary", 0.97)],
     )
 
-    page.line(left, 1620, right, 1620, fill=RULE_LIGHT, width=1)
+    page.line(left, y + 520, right, y + 520, fill=RULE_LIGHT, width=1)
     page.text(
-        (620, 1646),
+        (620, y + 546),
         "第 1 页　共 1 页",
         reg(17),
         fill=INK_SOFT,
@@ -718,40 +797,24 @@ def build_purchase_contract() -> tuple[Page, list[dict]]:
         record=False,
     )
 
-    (
-        r_item,
-        r_qty,
-        r_price,
-        r_amount,
-        r_tax_rate,
-        r_tax,
-        r_total,
-    ) = row_regions
-
     fields = [
         {"name": "合同编号", "value": "CG-2026-0917", "region_ids": [r_no["id"]]},
         {"name": "需方", "value": "杭州明远网络科技有限公司", "region_ids": [r_buyer["id"]]},
         {"name": "供方", "value": "南京海川软件股份有限公司", "region_ids": [r_seller["id"]]},
-        {"name": "品名", "value": "智能网关设备", "region_ids": [r_item["id"]]},
-        {"name": "数量", "value": "50", "region_ids": [r_qty["id"]]},
-        {"name": "单价", "value": "2,572.00", "region_ids": [r_price["id"]]},
-        {"name": "金额", "value": "128,600.00", "region_ids": [r_amount["id"]]},
         {"name": "税率", "value": "13%", "region_ids": [r_tax_rate["id"]]},
-        {"name": "税额", "value": "16,718.00", "region_ids": [r_tax["id"]]},
-        {"name": "合同总价", "value": "146,318.00", "region_ids": [r_total["id"]]},
+        {"name": "金额合计", "value": "156,700.00", "region_ids": [r_subtotal["id"]]},
+        {"name": "合同总价", "value": "177,071.00", "region_ids": [r_total["id"]]},
         {
             "name": "合同总价大写",
-            "value": "壹拾肆万伍仟叁佰壹拾捌元整",
+            "value": "壹拾柒万柒仟零柒拾壹元整",
             "region_ids": [r_total_cn["id"]],
         },
         {"name": "签署日期", "value": "2026年10月17日", "region_ids": [r_sign_date["id"]]},
     ]
+
     return page, fields
 
 
-# ---------------------------------------------------------------------------
-# 入口
-# ---------------------------------------------------------------------------
 def strip_pixels(regions: list[dict]) -> list[dict]:
     return [{key: value for key, value in region.items() if key != "_pixels"} for region in regions]
 

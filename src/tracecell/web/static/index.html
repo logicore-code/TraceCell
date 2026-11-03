@@ -45,6 +45,10 @@
 
     <div class="stats" id="statTiles">
       <div class="stat">
+        <span class="stat-label">核验场景</span>
+        <b class="stat-value is-text" id="statScenario">—</b>
+      </div>
+      <div class="stat">
         <span class="stat-label">字段数</span>
         <b class="stat-value" id="statFields">—</b>
       </div>
@@ -77,6 +81,10 @@
   <!-- ── 主布局：左文档列表 / 右内容 ─────────────────────────────── -->
   <main class="layout">
     <aside class="rail" id="rail">
+      <div class="view-switch" role="tablist" aria-label="视图切换">
+        <button type="button" class="view-tab is-active" role="tab" data-view="ledger" aria-selected="true">单据核验</button>
+        <button type="button" class="view-tab" role="tab" data-view="reconcile" aria-selected="false">跨文档对账</button>
+      </div>
       <div class="rail-head">
         <span>文档</span>
         <span class="rail-count" id="railCount"></span>
@@ -86,6 +94,19 @@
 
     <div class="content">
 
+      <!-- 跨文档对账 -->
+      <section class="panel" id="reconcilePanel" hidden>
+        <header class="panel-head">
+          <h2>跨文档对账</h2>
+          <div class="panel-head-meta">
+            <span class="panel-count" id="reconcileCount"></span>
+            <button type="button" class="btn btn-ghost btn-sm" id="reconcileReloadBtn">重新对账</button>
+          </div>
+        </header>
+        <div class="recon-stats" id="reconStats"></div>
+        <div id="reconcileBody"></div>
+      </section>
+
       <!-- 字段台账 -->
       <section class="panel" id="ledgerPanel">
         <header class="panel-head">
@@ -93,6 +114,7 @@
           <div class="panel-head-meta">
             <span class="panel-count" id="ledgerCount"></span>
             <button type="button" class="btn btn-ghost btn-sm" id="exportCsvBtn" disabled>导出 CSV</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="exportXlsxBtn" disabled>导出 Excel</button>
           </div>
         </header>
 
@@ -226,11 +248,10 @@
       </label>
       <label class="field">
         <span class="field-label">单据类型</span>
-        <select id="uploadSchema">
+        <select id="uploadScenario" aria-label="选择单据类型">
           <option value="invoice">增值税发票</option>
-          <option value="contract">合同</option>
-          <option value="expense">报销单</option>
         </select>
+        <span class="form-hint" id="scenarioHint"></span>
       </label>
       <p class="form-hint" id="uploadHint">核验在服务端执行，完成后自动切换到该文档。</p>
       <div class="form-actions">

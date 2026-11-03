@@ -293,20 +293,57 @@ def _conflict_note(kind: str, pair: dict[str, Any]) -> str:
     return f"取值不一致（{left} ↔ {right}）"
 
 
+def group_line_items(
+    fields: list[FieldValue], prefix: str = "明细"
+) -> dict[str, dict[str, FieldValue]]:
+    """把明细字段按品名分组。
+
+    "明细:智能网关设备:数量" 这类字段名拆成 {"智能网关设备": {"数量": ...}}。
+    逐行的加总与乘法校验都要靠它。
+    """
+
+    groups: dict[str, dict[str, FieldValue]] = {}
+    marker = f"{prefix}:"
+    for fld in fields:
+        if not fld.name.startswith(marker):
+            continue
+        rest = fld.name[len(marker) :]
+        if ":" not in rest:
+            continue
+        label, _, column = rest.partition(":")
+        groups.setdefault(label, {})[column] = fld
+    return groups
+
+
 def check_sum_consistency(fields: list[FieldValue], rules: list[ConsistencyRule]) -> list[Finding]:
     """单据内部的勾稽校验。
 
-    支持两种关系：sum（分项加总等于总数）和 product（各因子之积等于结果）。
+    支持五种关系：
+
+    * sum          总数 = 各分项之和
+    * product      总数 = 各因子之积
+    * amount_forms 大写金额与小写金额是同一笔数
+    * rows_product 每一行的结果列 = 该行各因子列之积
+    * rows_sum     整单合计 = 各明细行之和
+
     这类矛盾 OCR 质量模型解决不了——分项和总数都识别正确，错的是单据本身。
+
+    两种逐行规则里的 total / components 指的是**列名**（"金额"、"数量"），
+    不是字段名；其余三种指的是字段名。
     """
 
     findings: list[Finding] = []
     for rule in rules:
+        if rule.kind in ("rows_product", "rows_sum"):
+            findings.extend(_check_rows(fields, rule))
+            continue
+
         total_field = next((f for f in fields if f.name == rule.total), None)
         if total_field is None:
             continue
-        # 分项按前缀组匹配：规则写"明细"，对应的是"明细:差旅费"这一组字段；
-        # 规则写"金额"，且存在同名字段时就是那一个。
+
+        # 分项按前缀组匹配：规则写"明细"对应"明细:差旅费"这一组，
+        # 规则写"金额"且存在同名字段时就是那一个。
         chosen: list[FieldValue] = []
         for name in rule.components:
             exact = next((f for f in fields if f.name == name), None)
@@ -392,6 +429,93 @@ def check_sum_consistency(fields: list[FieldValue], rules: list[ConsistencyRule]
                 suggestion="核对这一项，确认是单据笔误还是识别错误",
             )
         )
+    return findings
+
+
+def _check_rows(fields: list[FieldValue], rule: ConsistencyRule) -> list[Finding]:
+    """逐行规则：行内乘法与整单加总。"""
+
+    findings: list[Finding] = []
+    groups = group_line_items(fields)
+
+    if rule.kind == "rows_product":
+        # 每一行的 结果列 = 各因子列之积
+        for label, columns in groups.items():
+            factors = [columns.get(name) for name in rule.components]
+            result = columns.get(rule.total)
+            if result is None or any(f is None for f in factors):
+                continue
+            numbers = [to_number(f.value) for f in factors]
+            if any(n is None for n in numbers):
+                continue
+            expected = 1.0
+            for number in numbers:
+                expected *= number
+            actual = to_number(result.value)
+            if actual is None:
+                continue
+            difference = expected - actual
+            if abs(difference) <= rule.tolerance:
+                continue
+            detail = " × ".join(f"{f.name.split(':')[-1]} {f.value}" for f in factors)
+            findings.append(
+                Finding(
+                    kind="sum_mismatch",
+                    severity=Severity.CRITICAL,
+                    message=(
+                        f"明细行勾稽不符：{label} 的 {rule.total} {result.value}，"
+                        f"按 {detail} 应为 {expected:,.2f}，差额 {difference:+,.2f}"
+                    ),
+                    region_ids=[rid for f in factors if f.region_ids for rid in f.region_ids]
+                    + list(result.region_ids),
+                    field_names=[f.name for f in factors] + [result.name],
+                    suggestion="核对这一行的数量、单价与金额",
+                )
+            )
+        return findings
+
+    # rows_sum：整单合计 = 各明细行之和
+    total_field = next((f for f in fields if f.name == rule.total), None)
+    if total_field is None:
+        return findings
+    column = rule.components[0] if rule.components else rule.total
+    amounts: list[Decimal] = []
+    labels: list[str] = []
+    for label, columns in groups.items():
+        item = columns.get(column)
+        if item is None:
+            continue
+        amount = normalize_money(item.value)
+        if amount is None:
+            break
+        amounts.append(Decimal(amount))
+        labels.append(f"{label} {item.value}")
+    if len(amounts) != len(groups) or not amounts:
+        return findings
+    expected = sum(amounts, Decimal("0"))
+    actual = normalize_money(total_field.value)
+    if actual is None:
+        return findings
+    difference = float(expected - Decimal(actual))
+    if abs(difference) <= rule.tolerance:
+        return findings
+    findings.append(
+        Finding(
+            kind="sum_mismatch",
+            severity=Severity.CRITICAL,
+            message=(
+                f"明细合计不符：{rule.total} {total_field.value}，"
+                f"各明细相加为 {expected:,.2f}，差额 {difference:+,.2f}"
+                f"（{'、'.join(labels)}）"
+            ),
+            region_ids=[
+                rid for item in groups.values() for f in item.values() for rid in f.region_ids
+            ]
+            + list(total_field.region_ids),
+            field_names=[total_field.name],
+            suggestion="核对明细行与合计",
+        )
+    )
     return findings
 
 

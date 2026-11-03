@@ -129,6 +129,90 @@ class LineItemExtractor:
         return fields
 
 
+class TableRowExtractor:
+    """把表格里的每一行抽成一组字段。
+
+    一行"智能网关设备　50　2,572.00　128,600.00"按表格规格拆成：
+
+        明细:智能网关设备:数量   = 50
+        明细:智能网关设备:单价   = 2,572.00
+        明细:智能网关设备:金额   = 128,600.00
+
+    字段名带上品名，同一张表里的不同行不会撞。带"明细:"前缀，勾稽规则
+    按前缀分组，就能逐行做加总和乘法校验。
+    """
+
+    NUMBER = re.compile(r"[-+]?\d[\d,]*(?:\.\d+)?")
+
+    def __init__(self, spec) -> None:
+        self.spec = spec
+
+    def _type_ok(self, index: int, value: str) -> bool:
+        """按列类型校验一个值。类型没声明就放行。"""
+
+        types = self.spec.types
+        if index >= len(types):
+            return True
+        kind = types[index]
+        cleaned = value.replace(",", "")
+        if kind == "int":
+            return "." not in cleaned
+        if kind == "money":
+            return "." in cleaned and len(cleaned.split(".")[-1]) == 2
+        return True
+
+    def extract(self, regions: list[Region]) -> list[FieldValue]:
+        fields: list[FieldValue] = []
+        columns = self.spec.columns
+        if not columns:
+            return fields
+        for region in regions:
+            text = (region.selected_text or region.text or "").strip()
+            if not text:
+                continue
+            numbers = self.NUMBER.findall(text)
+            if len(numbers) < len(columns):
+                continue
+            # 最后 len(columns) 个数字是列值，数字之前的部分是品名
+            values = numbers[-len(columns) :]
+            head = text[: text.rfind(numbers[-1])]
+            label = self._label_of(head)
+            if not label:
+                continue
+            # 先把整行的列都校验一遍，任何一列不合规这行就不是明细行
+            if not all(self._type_ok(index, value) for index, value in enumerate(values)):
+                continue
+            for name, value in zip(columns, values):
+                fields.append(
+                    FieldValue(
+                        name=f"{self.spec.prefix}:{label}:{name}",
+                        value=value,
+                        region_ids=[region.id],
+                        source="table-row",
+                    )
+                )
+        return fields
+
+    def _label_of(self, head: str) -> str:
+        """取品名。
+
+        表格行可能是"品名：智能网关设备 50 ..."，也可能直接就是"智能网关设备 50 ..."。
+        有冒号就取冒号后面那段，否则取行首第一个空白前的部分。
+        """
+
+        cleaned = head.strip(" \t\u3000:：")
+        if not cleaned:
+            return ""
+        if "：" in cleaned:
+            cleaned = cleaned.split("：", 1)[1].strip()
+        elif ":" in cleaned:
+            cleaned = cleaned.split(":", 1)[1].strip()
+        if not cleaned:
+            return ""
+        parts = [part for part in re.split(r"[\s\u3000]+", cleaned) if part]
+        return parts[0] if parts else ""
+
+
 class KieFieldExtractor:
     """调用 MiniCPM-OCR 的关键信息抽取能力。"""
 
@@ -174,11 +258,14 @@ class SchemaExtractor:
         self.with_line_items = with_line_items
         self.base = RegexFieldExtractor(scenario.fields)
         self.line_items = LineItemExtractor() if with_line_items else None
+        self.tables = [TableRowExtractor(spec) for spec in scenario.tables]
 
     def extract(self, regions: list[Region]) -> list[FieldValue]:
         fields = list(self.base.extract(regions))
         if self.line_items is not None:
             fields.extend(self.line_items.extract(regions))
+        for table in self.tables:
+            fields.extend(table.extract(regions))
         return fields
 
 

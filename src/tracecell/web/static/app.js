@@ -9,11 +9,16 @@
 const API = {
   health: '/api/health',
   samples: '/api/samples',
+  scenarios: '/api/scenarios',
   ledger: (docId) => `/api/ledger/${encodeURIComponent(docId)}`,
   image: (docId) => `/api/image/${encodeURIComponent(docId)}`,
   crop: (docId, regionId) => `/api/crop/${encodeURIComponent(docId)}/${encodeURIComponent(regionId)}`,
   checklist: (docId) => `/api/checklist/${encodeURIComponent(docId)}`,
+  reconcile: '/api/reconcile',
+  feedback: '/api/feedback',
   analyze: '/api/analyze',
+  exportCsv: (docId) => `/api/export/${encodeURIComponent(docId)}.csv`,
+  exportExcel: (docId) => `/api/export/${encodeURIComponent(docId)}.xlsx`,
 };
 
 /* ── 领域词典 ──────────────────────────────────────────────────────── */
@@ -68,6 +73,32 @@ const CATEGORY_META = {
   formula: '公式',
   figure: '图示',
   seal: '印章',
+};
+
+/* 问题类型 → 界面上的小标签 */
+const FINDING_KIND_META = {
+  sum_mismatch: { label: '勾稽不符', cls: 'danger' },
+  contradiction: { label: '跨文档矛盾', cls: 'danger' },
+  contested: { label: '候选分歧', cls: 'warn' },
+  low_score: { label: '低分', cls: 'warn' },
+  unscored_candidate: { label: '未评分', cls: 'muted' },
+  human_review: { label: '人工复核', cls: 'info' },
+  degraded: { label: '降级', cls: 'violet' },
+};
+
+/* 对账字段的归一化类型 */
+const RECONCILE_KIND_META = {
+  money: { label: '金额', cls: 'info' },
+  date: { label: '日期', cls: 'muted' },
+  entity: { label: '主体', cls: 'violet' },
+  text: { label: '文本', cls: 'muted' },
+};
+
+/* 人工复核结论 */
+const REVIEW_VERDICT_META = {
+  correct: { label: '确认无误', toast: '已确认无误，账本已更新' },
+  wrong: { label: '读错了', toast: '纠正读数已回灌账本' },
+  unreadable: { label: '无法辨认', toast: '已标记为无法辨认' },
 };
 
 /* 区域状态 → 核验动作的对照（用于账本未回传 decisions 时的轨迹还原） */
@@ -181,12 +212,18 @@ const state = {
   ledger: null,
   samples: [],
   localDocs: [],
+  scenarios: [],
   checklist: null,
   sortDir: 'none',
   drawer: null,          // { field, regionId }
   health: null,
   loading: false,
   error: null,
+  view: 'ledger',        // ledger | reconcile
+  reconcile: null,
+  reconcileLoading: false,
+  reconcileError: null,
+  highlightRegion: null, // 需要在字段台账里高亮的区域
 };
 
 /* ── 提示条 ────────────────────────────────────────────────────────── */
@@ -207,6 +244,7 @@ function showToast(message, kind) {
 async function boot() {
   bindEvents();
   loadHealth();
+  loadScenarios();
   await loadSamples();
   const docs = allDocs();
   if (docs.length) {
@@ -256,6 +294,19 @@ function bindEvents() {
   });
 
   $('#exportCsvBtn').addEventListener('click', exportCsv);
+  $('#exportXlsxBtn').addEventListener('click', exportExcel);
+
+  $('#reconcileReloadBtn').addEventListener('click', () => loadReconcile(true));
+
+  $$('.view-tab').forEach((tab) => {
+    tab.addEventListener('click', () => setView(tab.getAttribute('data-view')));
+  });
+
+  $('#uploadScenario').addEventListener('change', updateScenarioHint);
+
+  $('#findingsBody').addEventListener('click', onFindingsClick);
+
+  $('#reconcileBody').addEventListener('click', onReconcileClick);
 
   $('#uploadBtn').addEventListener('click', () => openModal('uploadModal'));
   $('#uploadForm').addEventListener('submit', handleUpload);
@@ -300,6 +351,38 @@ async function loadHealth() {
     chip.classList.remove('is-ok');
     text.textContent = '后端未连接';
   }
+}
+
+/* ── 单据场景 ──────────────────────────────────────────────────────── */
+async function loadScenarios() {
+  const select = $('#uploadScenario');
+  try {
+    const scenarios = await apiGet(API.scenarios);
+    state.scenarios = Array.isArray(scenarios) ? scenarios : [];
+    if (!state.scenarios.length) throw new Error('没有可用场景');
+    select.innerHTML = state.scenarios
+      .map((scenario) => `<option value="${esc(scenario.name)}">${esc(scenario.label)}</option>`)
+      .join('');
+    select.disabled = false;
+  } catch (err) {
+    state.scenarios = [];
+    select.innerHTML = '<option value="invoice">增值税发票</option>';
+    select.disabled = false;
+    showToast(`单据类型加载失败：${err.message}`, 'error');
+  }
+  updateScenarioHint();
+}
+
+function updateScenarioHint() {
+  const select = $('#uploadScenario');
+  const hint = $('#scenarioHint');
+  if (!select || !hint) return;
+  const scenario = state.scenarios.find((item) => item.name === select.value);
+  if (!scenario) {
+    hint.textContent = '';
+    return;
+  }
+  hint.textContent = `${scenario.description} · ${scenario.field_count} 个字段 · ${scenario.rule_count} 条勾稽规则`;
 }
 
 /* ── 文档列表 ──────────────────────────────────────────────────────── */
@@ -403,6 +486,180 @@ async function loadChecklist(docId) {
   renderChecklist();
 }
 
+/* ── 视图切换：单据核验 / 跨文档对账 ─────────────────────────────── */
+function setView(view) {
+  state.view = view === 'reconcile' ? 'reconcile' : 'ledger';
+
+  $$('.view-tab').forEach((tab) => {
+    const active = tab.getAttribute('data-view') === state.view;
+    tab.classList.toggle('is-active', active);
+    tab.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+
+  $('#ledgerPanel').hidden = state.view !== 'ledger';
+  $('#processPanel').hidden = state.view !== 'ledger';
+  $('#reconcilePanel').hidden = state.view !== 'reconcile';
+
+  if (state.view !== 'reconcile') return;
+  if (!state.reconcile && !state.reconcileLoading) {
+    loadReconcile();
+    return;
+  }
+  renderReconcile();
+}
+
+async function loadReconcile(force) {
+  if (state.reconcileLoading) return;
+  if (state.reconcile && !force) {
+    renderReconcile();
+    return;
+  }
+  state.reconcileLoading = true;
+  state.reconcileError = null;
+  renderReconcile();
+  try {
+    const data = await apiGet(API.reconcile);
+    state.reconcile = data && typeof data === 'object' ? data : {};
+  } catch (err) {
+    state.reconcile = null;
+    state.reconcileError = err.message;
+  } finally {
+    state.reconcileLoading = false;
+    renderReconcile();
+  }
+}
+
+function renderReconcile() {
+  const statsHost = $('#reconStats');
+  const body = $('#reconcileBody');
+  const count = $('#reconcileCount');
+
+  if (state.reconcileLoading) {
+    statsHost.innerHTML = '';
+    count.textContent = '';
+    body.innerHTML = '<div class="empty"><p class="empty-title">正在做跨文档对账…</p>'
+      + '<p class="empty-hint">要把所有样例账本跑一遍并按场景规则配对，需要一点时间。</p></div>';
+    return;
+  }
+
+  if (state.reconcileError) {
+    statsHost.innerHTML = '';
+    count.textContent = '';
+    body.innerHTML = '<div class="empty"><p class="empty-title">对账结果加载失败</p>'
+      + `<p class="empty-hint">${esc(state.reconcileError)}</p>`
+      + '<button type="button" class="btn btn-ghost btn-sm" id="reconcileRetryBtn">重试</button></div>';
+    const retry = $('#reconcileRetryBtn');
+    if (retry) retry.addEventListener('click', () => loadReconcile(true));
+    return;
+  }
+
+  const data = state.reconcile;
+  if (!data) {
+    statsHost.innerHTML = '';
+    count.textContent = '';
+    body.innerHTML = '<div class="empty"><p class="empty-title">还没有对账结果</p>'
+      + '<p class="empty-hint">点右上角「重新对账」跑一次跨文档比对。</p></div>';
+    return;
+  }
+
+  const mismatches = Array.isArray(data.mismatches) ? data.mismatches : [];
+  const singles = Array.isArray(data.single_source) ? data.single_source : [];
+  const compared = toNumber(data.compared_fields);
+  const matched = toNumber(data.matched);
+
+  statsHost.innerHTML = [
+    ['比对组数', compared === null ? '—' : compared],
+    ['一致组数', matched === null ? '—' : matched],
+    ['矛盾数', mismatches.length],
+  ]
+    .map((row) => `<div class="stat"><span class="stat-label">${esc(row[0])}</span>`
+      + `<b class="stat-value">${esc(row[1])}</b></div>`)
+    .join('');
+
+  count.textContent = `配对 ${Array.isArray(data.pairs) ? data.pairs.length : 0} 组`;
+
+  let html = '';
+  if (mismatches.length) {
+    html += '<div class="recon-section-title">矛盾明细</div>';
+    html += mismatches.map(mismatchHtml).join('');
+  } else {
+    html += '<div class="empty"><p class="empty-title">没有发现跨文档矛盾</p>'
+      + '<p class="empty-hint">所有配对上的字段都对得上。</p></div>';
+  }
+
+  html += '<div class="recon-section-title">仅单一来源的字段</div>';
+  if (singles.length) {
+    html += '<p class="recon-note">这些字段只出现在一份单据里，没有配对对象，跨文档无从核对。</p>';
+    html += '<div class="single-list">'
+      + singles.map((name) => `<span class="check-pill">${esc(name)}</span>`).join('')
+      + '</div>';
+  } else {
+    html += '<div class="empty empty-sm"><p class="empty-hint">每个字段都找到了配对对象。</p></div>';
+  }
+
+  body.innerHTML = html;
+}
+
+function mismatchHtml(mismatch) {
+  const values = Array.isArray(mismatch.values) ? mismatch.values : [];
+  const kind = RECONCILE_KIND_META[mismatch.kind] || { label: mismatch.kind || '文本', cls: 'muted' };
+
+  // 置信度更低的一侧更可疑，用来标出警示色。
+  let suspect = -1;
+  let lowest = null;
+  values.forEach((entry, index) => {
+    const confidence = toNumber(entry.confidence);
+    if (confidence === null) return;
+    if (lowest === null || confidence < lowest) {
+      lowest = confidence;
+      suspect = index;
+    }
+  });
+  const tie = values.filter((entry) => toNumber(entry.confidence) === lowest).length > 1;
+
+  const sides = values
+    .map((entry, index) => {
+      const confidence = toNumber(entry.confidence);
+      const regionIds = Array.isArray(entry.region_ids) ? entry.region_ids : [];
+      const flagged = suspect === index && !tie;
+      return `<button type="button" class="mismatch-side${flagged ? ' is-suspect' : ''}" data-doc="${esc(entry.doc_id)}" data-region="${esc(regionIds[0] || '')}">
+        <span class="mismatch-doc">${esc(entry.doc_id)}</span>
+        <span class="mismatch-field">${esc(entry.field || '')}</span>
+        <span class="mismatch-value">${esc(entry.value || '—')}</span>
+        <span class="mismatch-meta">置信度 ${fmt(confidence, 3)}${regionIds.length ? ' · 区域 ' + esc(regionIds.join(' ')) : ''}</span>
+        ${flagged ? '<span class="mismatch-flag">更可疑</span>' : ''}
+      </button>`;
+    })
+    .join('<span class="mismatch-op">≠</span>');
+
+  return `<div class="mismatch">
+    <div class="mismatch-head">
+      <span class="mismatch-title">${esc(mismatch.note || mismatch.field_name || '未命名矛盾')}</span>
+      ${tag(kind.label, kind.cls)}
+    </div>
+    <div class="mismatch-pair">${esc(mismatch.field_name || '')}</div>
+    <div class="mismatch-values">${sides}</div>
+  </div>`;
+}
+
+function onReconcileClick(event) {
+  const side = event.target.closest('.mismatch-side[data-doc]');
+  if (!side) return;
+  gotoDocument(side.getAttribute('data-doc'), side.getAttribute('data-region'));
+}
+
+/* 从对账视图跳回单据核验视图，并选中对应文档、高亮对应区域 */
+function gotoDocument(docId, regionId) {
+  state.highlightRegion = regionId || null;
+  setView('ledger');
+  if (docId && docId !== state.docId) {
+    selectDocument(docId);
+    return;
+  }
+  renderAll();
+  scrollToHighlight();
+}
+
 /* ── 渲染入口 ──────────────────────────────────────────────────────── */
 function renderAll() {
   renderSummary();
@@ -442,6 +699,9 @@ function renderSummary() {
   const fields = ledger && ledger.fields ? ledger.fields.length : 0;
   const regions = ledger && ledger.regions ? ledger.regions.length : 0;
 
+  const ledgerMeta = (ledger && ledger.meta) || {};
+  $('#statScenario').textContent = ledgerMeta.scenario_label || ledgerMeta.scenario || '—';
+
   $('#statFields').textContent = summary.field_count !== undefined ? summary.field_count : (fields || '—');
   $('#statRegions').textContent = summary.region_count !== undefined ? summary.region_count : (regions || '—');
 
@@ -479,7 +739,9 @@ function renderSummary() {
     humanNote.textContent = '';
   }
 
-  $('#exportCsvBtn').disabled = !(ledger && ledger.csv);
+  const hasLedger = !!(ledger && ledger.doc_id);
+  $('#exportCsvBtn').disabled = !hasLedger;
+  $('#exportXlsxBtn').disabled = !hasLedger;
 }
 
 /* ── 字段台账 ──────────────────────────────────────────────────────── */
@@ -545,6 +807,7 @@ function renderFields() {
 
   empty.hidden = true;
   body.innerHTML = fields.map(fieldRowHtml).join('');
+  scrollToHighlight();
 }
 
 function fieldRowHtml(field, index) {
@@ -558,7 +821,10 @@ function fieldRowHtml(field, index) {
     .map((rid) => `<button type="button" class="rid" data-region="${esc(rid)}">${esc(rid)}</button>`)
     .join('');
 
-  return `<tr data-index="${index}" tabindex="0">
+  const highlighted = !!state.highlightRegion
+    && (field.region_ids || []).indexOf(state.highlightRegion) >= 0;
+
+  return `<tr data-index="${index}" tabindex="0"${highlighted ? ' class="is-highlight"' : ''}>
     <td class="col-name">${esc(field.name)}</td>
     <td class="col-value">${esc(field.value)}</td>
     <td class="col-conf">
@@ -571,6 +837,12 @@ function fieldRowHtml(field, index) {
     <td>${tag(st.label, st.cls)}</td>
     <td class="col-rid">${regionChips || '<span class="muted">无证据</span>'}</td>
   </tr>`;
+}
+
+function scrollToHighlight() {
+  if (!state.highlightRegion) return;
+  const row = $('#fieldBody tr.is-highlight');
+  if (row) row.scrollIntoView({ block: 'nearest' });
 }
 
 /* ── 决策流水 ──────────────────────────────────────────────────────── */
@@ -772,31 +1044,177 @@ function renderFindings() {
     return left - right;
   });
 
-  host.innerHTML = findings
-    .map((finding) => {
-      const sev = severityMeta(finding.severity);
-      const links = (finding.region_ids || [])
-        .filter((rid) => findRegion(rid))
-        .map((rid) => `<button type="button" class="rid" data-region="${esc(rid)}">${esc(rid)}</button>`)
-        .join('');
-      const fields = (finding.field_names || [])
-        .map((name) => `<span class="check-pill">${esc(name)}</span>`)
-        .join('');
-      return `<div class="finding ${esc(sev.cls)}">
-        <div class="finding-head">
-          ${tag(sev.label, sev.cls)}
-          <span class="muted">${esc(finding.kind || '')}</span>
-        </div>
-        <div class="finding-msg">${esc(finding.message || '')}</div>
-        ${finding.suggestion ? `<div class="finding-sugg">建议：${esc(finding.suggestion)}</div>` : ''}
-        ${links || fields ? `<div class="finding-links">${links}${fields}</div>` : ''}
-      </div>`;
-    })
-    .join('');
+  host.innerHTML = findings.map(findingHtml).join('');
 
   $$('#findingsBody .rid[data-region]').forEach((chip) => {
     chip.addEventListener('click', () => openRegion(chip.getAttribute('data-region')));
   });
+}
+
+function findingHtml(finding) {
+  const sev = severityMeta(finding.severity);
+  const kind = FINDING_KIND_META[finding.kind] || { label: finding.kind || '未分类', cls: 'muted' };
+  const regionIds = (finding.region_ids || []).filter((rid) => findRegion(rid));
+  const regionId = regionIds[0] || '';
+
+  const links = regionIds
+    .map((rid) => `<button type="button" class="rid" data-region="${esc(rid)}">${esc(rid)}</button>`)
+    .join('');
+  const fields = (finding.field_names || [])
+    .map((name) => `<span class="check-pill">${esc(name)}</span>`)
+    .join('');
+
+  const tools = regionId
+    ? `<button type="button" class="mini-btn" data-locate="${esc(regionId)}">定位</button>
+       <button type="button" class="mini-btn is-ok" data-review="correct" data-region="${esc(regionId)}">确认无误</button>
+       <button type="button" class="mini-btn is-warn" data-review="wrong" data-region="${esc(regionId)}">读错了</button>
+       <button type="button" class="mini-btn is-danger" data-review="unreadable" data-region="${esc(regionId)}">无法辨认</button>`
+    : '';
+
+  return `<div class="finding ${esc(sev.cls)}">
+    <div class="finding-head">
+      <div class="finding-tags">
+        ${tag(kind.label, kind.cls)}
+        ${tag(sev.label, sev.cls)}
+        <span class="muted finding-kind">${esc(finding.kind || '')}</span>
+      </div>
+      <div class="finding-tools">${tools}</div>
+    </div>
+    <div class="finding-msg">${esc(finding.message || '')}</div>
+    ${finding.suggestion ? `<div class="finding-sugg">建议：${esc(finding.suggestion)}</div>` : ''}
+    ${links || fields ? `<div class="finding-links">${links}${fields}</div>` : ''}
+    ${regionId ? '' : '<div class="finding-sugg">这条问题没有可定位的区域，人工结论无法回灌。</div>'}
+  </div>`;
+}
+
+/* 问题条目上的交互：定位 / 人工复核 */
+function onFindingsClick(event) {
+  const locate = event.target.closest('[data-locate]');
+  if (locate) {
+    event.stopPropagation();
+    locateFinding(locate.getAttribute('data-locate'));
+    return;
+  }
+
+  const submit = event.target.closest('[data-fix-submit]');
+  if (submit) {
+    event.stopPropagation();
+    const box = submit.closest('.finding-fix');
+    const input = box ? $('.fix-input', box) : null;
+    const text = input ? input.value.trim() : '';
+    if (!text) {
+      showToast('请填入正确的读数', 'warn');
+      if (input) input.focus();
+      return;
+    }
+    const regionId = box ? box.getAttribute('data-region') : '';
+    if (box) box.remove();
+    submitReview(regionId, 'wrong', text);
+    return;
+  }
+
+  const cancel = event.target.closest('[data-fix-cancel]');
+  if (cancel) {
+    event.stopPropagation();
+    const box = cancel.closest('.finding-fix');
+    if (box) box.remove();
+    return;
+  }
+
+  const review = event.target.closest('[data-review]');
+  if (!review) return;
+  event.stopPropagation();
+  const verdict = review.getAttribute('data-review');
+  const regionId = review.getAttribute('data-region');
+  if (verdict === 'wrong') {
+    openFixForm(review.closest('.finding'), regionId);
+    return;
+  }
+  submitReview(regionId, verdict, '');
+}
+
+function openFixForm(container, regionId) {
+  if (!container) return;
+  const existing = $('.finding-fix', container);
+  if (existing) existing.remove();
+
+  const box = document.createElement('div');
+  box.className = 'finding-fix';
+  box.setAttribute('data-region', regionId || '');
+  box.innerHTML = '<input type="text" class="fix-input" placeholder="填入正确读数，例如：价税合计：¥145,318.00" />'
+    + '<button type="button" class="mini-btn is-ok" data-fix-submit>提交</button>'
+    + '<button type="button" class="mini-btn" data-fix-cancel>取消</button>';
+  container.appendChild(box);
+
+  const input = $('.fix-input', box);
+  if (input) input.focus();
+}
+
+/* 定位：切回单据核验视图，高亮字段台账里对应区域所在的行 */
+function locateFinding(regionId) {
+  if (!regionId) return;
+  state.highlightRegion = regionId;
+  setView('ledger');
+  renderAll();
+  scrollToHighlight();
+  if (!$('#fieldBody tr.is-highlight')) {
+    // 该区域没有对应字段行，退回看原图证据
+    openRegion(regionId);
+  }
+}
+
+/* 人工复核回灌 */
+async function submitReview(regionId, verdict, correctedText) {
+  if (!state.docId) {
+    showToast('没有可以回灌的文档', 'warn');
+    return;
+  }
+  if (!regionId) {
+    showToast('这条问题没有关联区域，无法回灌', 'warn');
+    return;
+  }
+
+  const buttons = $$('#findingsBody [data-review]');
+  buttons.forEach((button) => { button.disabled = true; });
+
+  try {
+    const response = await fetch(API.feedback, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        doc_id: state.docId,
+        region_id: regionId,
+        verdict: verdict,
+        corrected_text: correctedText || '',
+        reviewer: '',
+        note: '',
+      }),
+    });
+    if (!response.ok) throw new Error(await readError(response));
+
+    const meta = REVIEW_VERDICT_META[verdict];
+    showToast(meta ? meta.toast : '复核结论已回灌', 'ok');
+    await refreshLedger();
+  } catch (err) {
+    showToast(`复核回灌失败：${err.message}`, 'error');
+    buttons.forEach((button) => { button.disabled = false; });
+  }
+}
+
+/* 重新拉一次账本，让回灌结果反映到台账上 */
+async function refreshLedger() {
+  if (!state.docId) return;
+  try {
+    const ledger = await apiGet(API.ledger(state.docId));
+    state.ledger = ledger;
+    state.docId = ledger.doc_id || state.docId;
+    state.loading = false;
+    state.error = null;
+    renderAll();
+    loadChecklist(state.docId);
+  } catch (err) {
+    showToast(`账本刷新失败：${err.message}`, 'error');
+  }
 }
 
 /* ── 待复核清单 ────────────────────────────────────────────────────── */
@@ -1109,7 +1527,7 @@ function closeModal(id) {
 async function handleUpload(event) {
   event.preventDefault();
   const input = $('#uploadFile');
-  const schema = $('#uploadSchema').value;
+  const scenario = $('#uploadScenario').value;
   const submit = $('#uploadSubmit');
   const file = input.files && input.files[0];
 
@@ -1120,7 +1538,7 @@ async function handleUpload(event) {
 
   const form = new FormData();
   form.append('file', file);
-  form.append('schema', schema);
+  form.append('scenario', scenario);
 
   submit.disabled = true;
   submit.textContent = '核验中…';
@@ -1137,7 +1555,7 @@ async function handleUpload(event) {
         doc_id: docId,
         source: file.name,
         label: file.name,
-        schema: schema,
+        schema: scenario,
         description: '本地上传',
       });
     }
@@ -1158,22 +1576,36 @@ async function handleUpload(event) {
   }
 }
 
-/* ── 导出 CSV ──────────────────────────────────────────────────────── */
+/* ── 导出（CSV / Excel） ──────────────────────────────────────────── */
 function exportCsv() {
-  const ledger = state.ledger;
-  if (!ledger || !ledger.csv) {
+  downloadExport(API.exportCsv(state.docId), `${state.docId || 'ledger'}.csv`, 'CSV');
+}
+
+function exportExcel() {
+  downloadExport(API.exportExcel(state.docId), `${state.docId || 'ledger'}.xlsx`, 'Excel');
+}
+
+async function downloadExport(path, filename, label) {
+  if (!state.docId) {
     showToast('当前没有可导出的台账', 'warn');
     return;
   }
-  const blob = new Blob(['﻿' + ledger.csv], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `${ledger.doc_id || 'ledger'}.csv`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  try {
+    const response = await fetch(path);
+    if (!response.ok) throw new Error(await readError(response));
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    showToast(`${label} 已开始下载：${filename}`, 'ok');
+  } catch (err) {
+    showToast(`${label} 导出失败：${err.message}`, 'error');
+  }
 }
 
 /* ── 入口 ──────────────────────────────────────────────────────────── */

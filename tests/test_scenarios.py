@@ -136,22 +136,35 @@ class TestConsistencyRules:
         ]
         assert check_sum_consistency(fields, scenario.rules) == []
 
-    def test_purchase_contract_multiplication_and_sum(self):
+    def test_purchase_contract_total_and_tax(self):
         scenario = get_scenario("purchase_contract")
         fields = [
-            FieldValue(name="数量", value="50"),
-            FieldValue(name="单价", value="2,572.00"),
-            FieldValue(name="金额", value="128,600.00"),
-            FieldValue(name="税额", value="16,718.00"),
-            FieldValue(name="合同总价", value="145,318.00"),
+            FieldValue(name="金额合计", value="156,700.00"),
+            FieldValue(name="税额", value="20,371.00"),
+            FieldValue(name="合同总价", value="177,071.00"),
         ]
         assert check_sum_consistency(fields, scenario.rules) == []
 
         # 转置错：总价多了 1000
-        fields[-1].value = "146,318.00"
+        fields[-1].value = "178,071.00"
         findings = check_sum_consistency(fields, scenario.rules)
         assert len(findings) == 1
         assert "1,000.00" in findings[0].message
+
+    def test_purchase_contract_big_amount_forms(self):
+        """大写与小写必须是同一笔数。"""
+
+        scenario = get_scenario("purchase_contract")
+        fields = [
+            FieldValue(name="合同总价", value="177,071.00"),
+            FieldValue(name="合同总价大写", value="壹拾柒万柒仟零柒拾壹元整"),
+        ]
+        assert check_sum_consistency(fields, scenario.rules) == []
+
+        fields[-1].value = "壹拾柒万捌仟零柒拾壹元整"
+        findings = check_sum_consistency(fields, scenario.rules)
+        assert len(findings) == 1
+        assert "大写与小写" in findings[0].message
 
     def test_expense_line_item_group_is_summed(self):
         scenario = get_scenario("expense")
@@ -269,3 +282,99 @@ class TestCrossRuleSelection:
         for rule in CROSS_RULES:
             assert rule.left_scenario in SCENARIOS
             assert rule.right_scenario in SCENARIOS
+
+
+class TestMultiLineItems:
+    """多行明细：采购合同这种一行一个品名的表格。"""
+
+    def _rows(self):
+        return [
+            ("智能网关设备", "50", "2,572.00", "128,600.00"),
+            ("边缘网关设备", "20", "1,180.00", "26,600.00"),
+            ("安装配件", "100", "45.00", "4,500.00"),
+        ]
+
+    def _regions(self):
+        from tracecell.types import BBox, Category, Region
+
+        regions = []
+        for index, (name, qty, price, amount) in enumerate(self._rows()):
+            regions.append(
+                Region(
+                    id=f"r{index:03d}",
+                    page=1,
+                    bbox=BBox(0.1, 0.1 + index * 0.05, 0.9, 0.14 + index * 0.05),
+                    category=Category.TABLE,
+                    text=f"{name}　{qty}　{price}　{amount}",
+                )
+            )
+        return regions
+
+    def test_table_rows_are_extracted(self):
+        fields = build_extractor("purchase_contract").extract(self._regions())
+        names = {f.name for f in fields}
+        assert "明细:边缘网关设备:数量" in names
+        assert "明细:边缘网关设备:单价" in names
+        assert "明细:边缘网关设备:金额" in names
+
+    def test_non_table_rows_are_rejected(self):
+        """签署日期那一行有三个数，但不是明细行。"""
+
+        from tracecell.types import BBox, Category, Region
+
+        regions = self._regions() + [
+            Region(
+                id="r009",
+                page=1,
+                bbox=BBox(0.1, 0.5, 0.9, 0.55),
+                category=Category.TEXT,
+                text="签署日期：2026年10月17日",
+            )
+        ]
+        fields = build_extractor("purchase_contract").extract(regions)
+        assert not any("2026年10月" in f.name for f in fields)
+
+    def test_row_product_rule_catches_a_wrong_line(self):
+        from tracecell.reconcile import check_sum_consistency
+
+        scenario = get_scenario("purchase_contract")
+        fields = build_extractor("purchase_contract").extract(self._regions())
+        findings = check_sum_consistency(fields, scenario.rules)
+        messages = [f.message for f in findings]
+        assert any("边缘网关设备" in m and "3,000" in m for m in messages)
+
+    def test_row_sum_rule_catches_a_wrong_total(self):
+        from tracecell.reconcile import check_sum_consistency
+
+        scenario = get_scenario("purchase_contract")
+        fields = build_extractor("purchase_contract").extract(self._regions())
+        fields.append(FieldValue(name="金额合计", value="156,700.00"))
+        findings = check_sum_consistency(fields, scenario.rules)
+        assert any("明细合计不符" in f.message for f in findings)
+
+    def test_consistent_table_passes(self):
+        """每一行的数量×单价都等于金额，合计也对得上，就不该报。"""
+
+        from tracecell.reconcile import check_sum_consistency
+        from tracecell.types import BBox, Category, Region
+
+        rows = [
+            ("智能网关设备", "50", "2,572.00", "128,600.00"),
+            ("边缘网关设备", "20", "1,180.00", "23,600.00"),
+            ("安装配件", "100", "45.00", "4,500.00"),
+        ]
+        regions = [
+            Region(
+                id=f"r{index:03d}",
+                page=1,
+                bbox=BBox(0.1, 0.1 + index * 0.05, 0.9, 0.14 + index * 0.05),
+                category=Category.TABLE,
+                text=f"{name}　{qty}　{price}　{amount}",
+            )
+            for index, (name, qty, price, amount) in enumerate(rows)
+        ]
+        scenario = get_scenario("purchase_contract")
+        fields = build_extractor("purchase_contract").extract(regions)
+        fields.append(FieldValue(name="金额合计", value="156,700.00"))
+        findings = check_sum_consistency(fields, scenario.rules)
+        assert not any("明细" in f.message for f in findings)

@@ -62,6 +62,27 @@ class CrossRule:
 
 
 @dataclass
+class TableSpec:
+    """一张明细表的结构。
+
+    采购合同、报销单这类单据，明细在表格里：一行一个品名，后面跟着数量、
+    单价、金额。列名按从左到右的顺序写。
+    """
+
+    prefix: str = "明细"
+    columns: list[str] = field(default_factory=list)
+    types: list[str] = field(default_factory=list)
+    """与 columns 对齐的列类型：int / money / number。
+
+    有了类型校验，"签署日期：2026年10月17日"这种行就不会被当成明细行
+    ——它那三个数是 2026、10、17，凑不出"整数、两位小数、两位小数"。
+    """
+
+    label: str = ""
+    """品名列的名称。空字符串表示第一列就是品名。"""
+
+
+@dataclass
 class Scenario:
     """一个场景的完整定义。"""
 
@@ -69,6 +90,7 @@ class Scenario:
     label: str
     fields: list[FieldPattern] = field(default_factory=list)
     rules: list[ConsistencyRule] = field(default_factory=list)
+    tables: list[TableSpec] = field(default_factory=list)
     risk_overrides: dict[str, Severity] = field(default_factory=dict)
     description: str = ""
 
@@ -199,7 +221,7 @@ FINANCIAL_STATEMENT = Scenario(
 PURCHASE_CONTRACT = Scenario(
     name="purchase_contract",
     label="设备采购合同",
-    description="金额 = 数量 × 单价；合同总价 = 金额 + 税额；大写与小写一致",
+    description="明细逐行金额 = 数量 × 单价；合计 = 各行之和；总价 = 合计 + 税额；大写与小写一致",
     fields=[
         FieldPattern("合同编号", r"合同编号[:：]?\s*([A-Za-z0-9\-]+)"),
         FieldPattern("需方", r"需方[（(]?(?:盖章[)）]?)?[:：]?\s*([^\n\r]+)"),
@@ -210,13 +232,18 @@ PURCHASE_CONTRACT = Scenario(
         FieldPattern("金额", r"(?<!合同总价)(?<!税额)金额[:：]?\s*[¥￥]?\s*([\d,]+\.\d{2})"),
         FieldPattern("税率", r"税率[:：]?\s*(\d+(?:\.\d+)?%)"),
         FieldPattern("税额", r"税额[:：]?\s*[¥￥]?\s*([\d,]+\.\d{2})"),
+        FieldPattern("金额合计", r"金额合计[:：]?\s*[¥￥]?\s*([\d,]+\.\d{2})"),
         FieldPattern("合同总价", r"合同总价[:：]?\s*[¥￥]?\s*([\d,]+\.\d{2})"),
         FieldPattern("合同总价大写", r"合同总价[（(]?大写[)）]?[:：]?\s*([^\n\r]+)"),
         FieldPattern("签署日期", r"签署日期[:：]?\s*(\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日)"),
     ],
+    tables=[
+        TableSpec(prefix="明细", columns=["数量", "单价", "金额"], types=["int", "money", "money"]),
+    ],
     rules=[
-        ConsistencyRule("product", "金额", ["数量", "单价"]),
-        ConsistencyRule("sum", "合同总价", ["金额", "税额"]),
+        ConsistencyRule("rows_product", "金额", ["数量", "单价"]),
+        ConsistencyRule("rows_sum", "金额合计", ["金额"]),
+        ConsistencyRule("sum", "合同总价", ["金额合计", "税额"]),
         ConsistencyRule("amount_forms", "合同总价", ["合同总价大写"]),
     ],
     risk_overrides={
