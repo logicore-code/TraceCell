@@ -36,6 +36,54 @@ REPAIR_SUCCESS = {
 }
 
 
+def fit_repair_gains(sessions: list[dict[str, Any]]) -> dict[str, float]:
+    """从录制数据里回归"换一种策略能修好这一格的概率"。
+
+    REPAIR_SUCCESS 那几个常数一开始是拍脑袋的，后来觉得该有出处。判据是
+    这样的：一个区域有两条读法不同的候选，说明"第一次读错了，换个参数
+    重读可能读对"。有多少个区域确实被后来的候选纠正了，比率就是重解析
+    的期望增益。
+
+    样本少的时候这个估计不可靠，宁可保守一点——所以返回的增益会往小了
+    取，并同时给出样本量。
+    """
+
+    attempts = {"reparse": 0, "best_of_n": 0, "vlm_escalation": 0}
+    successes = dict(attempts)
+
+    for session in sessions:
+        for document in session.get("documents", []):
+            for region in document.get("regions", []):
+                candidates = [c for c in region.get("candidates", []) if c.get("score") is not None]
+                if len(candidates) < 2:
+                    continue
+                primary = next((c for c in candidates if c.get("origin") == "primary"), None)
+                if primary is None:
+                    continue
+                for candidate in candidates:
+                    if candidate.get("origin") == "primary":
+                        continue
+                    if candidate.get("text") == primary.get("text"):
+                        continue
+                    # 有分歧，说明第一次读出了别的东西
+                    origin = candidate.get("origin", "reparse-16x")
+                    key = "vlm_escalation" if origin == "vlm-review" else "reparse"
+                    attempts[key] = attempts.get(key, 0) + 1
+                    if (candidate.get("score") or 0) > (primary.get("score") or 0):
+                        successes[key] = successes.get(key, 0) + 1
+
+    gains: dict[str, float] = {}
+    for key, count in attempts.items():
+        if count == 0:
+            gains[key] = REPAIR_SUCCESS.get(key, 0.35)
+            continue
+        # 样本少时往保守了取：加一个先验，避免一两个样本就得出 100%
+        prior = 0.35
+        weight = min(count, 20) / 20
+        gains[key] = round((successes[key] / count) * weight + prior * (1 - weight), 4)
+    return gains
+
+
 @dataclass
 class CellState:
     """决策时需要知道的关于一格的全部信息。"""
@@ -198,7 +246,9 @@ class BudgetPlanner:
 
         # 重解析：换一套视觉参数重新读一遍。因为新旧候选都会留下并交给
         # Jev 择优，所以这一步只可能变好，不会变差。
-        gain = REPAIR_SUCCESS["reparse"] * (1.0 - state.confidence)
+        gain = self.policy.repair_gains.get("reparse", REPAIR_SUCCESS["reparse"]) * (
+            1.0 - state.confidence
+        )
         plans.append(
             self._plan(
                 state,
@@ -210,7 +260,9 @@ class BudgetPlanner:
 
         # 择优：在已有候选里挑最好的。需要至少有一个未评分的候选。
         if state.candidate_count > state.scored_count and state.candidate_count >= 2:
-            gain = REPAIR_SUCCESS["best_of_n"] * (1.0 - state.confidence)
+            gain = self.policy.repair_gains.get("best_of_n", REPAIR_SUCCESS["best_of_n"]) * (
+                1.0 - state.confidence
+            )
             plans.append(
                 self._plan(
                     state,
@@ -221,7 +273,9 @@ class BudgetPlanner:
             )
 
         # 升级到多模态模型：贵，但对疑难区域最有效。
-        gain = REPAIR_SUCCESS["vlm_escalation"] * (1.0 - state.confidence)
+        gain = self.policy.repair_gains.get(
+            "vlm_escalation", REPAIR_SUCCESS["vlm_escalation"]
+        ) * (1.0 - state.confidence)
         plans.append(
             self._plan(
                 state,

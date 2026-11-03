@@ -250,6 +250,42 @@ class BudgetPolicy:
     """人工复核的成本相对自动核验的倍数，写在 CostModel 里，这里保留扩展位。"""
 
     cost_model: CostModel = field(default_factory=CostModel)
+    repair_gains: dict[str, float] = field(default_factory=dict)
+    """换一种策略能修好这一格的概率。默认用 budget.REPAIR_SUCCESS，
+    可以用 fit_repair_gains 从录制数据里回归出来覆盖。"""
+
+    calibration: dict[str, Any] = field(default_factory=dict)
+    """阈值是怎么来的。空表示用的是默认值。"""
+
+    @classmethod
+    def from_calibration(
+        cls,
+        samples_path: str | Path,
+        target_accuracy: float = 0.99,
+        base: "BudgetPolicy | None" = None,
+    ) -> "BudgetPolicy":
+        """用标注样本标定出来的阈值覆盖放行阈值。
+
+        默认的 0.90 是个起点，不是结论。拿自己的数据标一次之后，放行
+        阈值就该跟着标定结果走——这件事放在策略对象里做，而不是让人
+        记得去改代码里的常数。
+        """
+
+        from .calibration import calibrate, load_samples
+
+        result = calibrate(load_samples(samples_path), target_accuracy=target_accuracy)
+        policy = base or cls()
+        policy.accept_threshold = result.threshold
+        policy.calibration = {
+            "source": str(samples_path),
+            "target_accuracy": target_accuracy,
+            "threshold": result.threshold,
+            "accept_rate": result.accept_rate,
+            "accept_accuracy": result.accept_accuracy,
+            "auroc": result.auroc,
+            "samples": result.total,
+        }
+        return policy
 
     def budget_for(self, severity: Severity) -> float:
         """按风险等级分配的局部预算上限。
@@ -265,13 +301,34 @@ class BudgetPolicy:
         }[severity.value]
         return self.total_budget * max(share, 0.1)
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "accept_threshold": self.accept_threshold,
+            "escalate_threshold": self.escalate_threshold,
+            "residual_tolerance": self.residual_tolerance,
+            "max_rounds": self.max_rounds,
+            "total_budget": self.total_budget,
+            "cost_model": self.cost_model.__dict__,
+            "repair_gains": dict(self.repair_gains),
+            "calibration": dict(self.calibration),
+        }
+
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "BudgetPolicy":
         data = dict(data)
         cost = data.pop("cost_model", None)
         policy = cls(
-            **{k: v for k, v in data.items() if k in cls.__annotations__ and k != "cost_model"},
+            **{
+                k: v
+                for k, v in data.items()
+                if k in cls.__annotations__
+                and k not in ("cost_model", "calibration", "repair_gains")
+            },
         )
         if cost:
             policy.cost_model = CostModel.from_dict(cost)
+        if isinstance(data.get("calibration"), dict):
+            policy.calibration = data["calibration"]
+        if isinstance(data.get("repair_gains"), dict):
+            policy.repair_gains = {k: float(v) for k, v in data["repair_gains"].items()}
         return policy

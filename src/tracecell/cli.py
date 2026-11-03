@@ -76,11 +76,21 @@ def _build_loop(args, doc_id: str, scenario: str | None = None) -> VerificationL
     # 三个模型都套上降级包装：任何一个挂了都不至于整份核验崩掉，
     # 具体降级行为写进账本的 degradation 字段。
     degradation = DegradationLog()
+    policy = BudgetPolicy()
+    if getattr(args, "policy", None):
+        policy = BudgetPolicy.from_dict(json.loads(Path(args.policy).read_text(encoding="utf-8")))
+    if getattr(args, "calibrate", None):
+        policy = BudgetPolicy.from_calibration(args.calibrate, base=policy)
+        print(
+            f"阈值已按标注样本标定为 {policy.accept_threshold:.3f}"
+            f"（免检率 {policy.calibration.get('accept_rate', 0):.2%}）",
+            file=sys.stderr,
+        )
     return VerificationLoop(
         parser=ResilientParser(parser, degradation),
         scorer=ResilientScorer(scorer, degradation),
         escalator=ResilientEscalator(escalator, degradation),
-        policy=BudgetPolicy(),
+        policy=policy,
         risk_policy=RiskPolicy(),
         extractor=build_extractor(scenario),
         scenario=scenario,
@@ -269,6 +279,31 @@ def cmd_feedback(args) -> int:
     return 0
 
 
+def cmd_fit_gains(args) -> int:
+    """从录制数据里回归"换一种策略能修好这一格的概率"。"""
+
+    import json as _json
+
+    from .budget import fit_repair_gains
+
+    sessions = []
+    for path in args.sessions:
+        sessions.append(_json.loads(Path(path).read_text(encoding="utf-8")))
+    gains = fit_repair_gains(sessions)
+    print("回归出的期望增益：")
+    for name, value in sorted(gains.items()):
+        print(f"  {name:16s} {value:.4f}")
+
+    policy = BudgetPolicy()
+    policy.repair_gains = gains
+    if args.out:
+        Path(args.out).write_text(
+            _json.dumps(policy.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        print(f"策略配置已保存：{args.out}", file=sys.stderr)
+    return 0
+
+
 def cmd_scenarios(args) -> int:
     """列出支持的场景及其勾稽关系。"""
 
@@ -382,6 +417,12 @@ def build_parser() -> argparse.ArgumentParser:
         sp.add_argument("--jev-url", default="http://127.0.0.1:8030")
         sp.add_argument("--vlm-url", default="http://127.0.0.1:8001")
         sp.add_argument("--vlm-model", default="openbmb/MiniCPM-V-4.7-35B-A3B")
+        sp.add_argument("--policy", default=None, help="策略配置 JSON 路径")
+        sp.add_argument(
+            "--calibrate",
+            default=None,
+            help="用这份标注样本标定放行阈值，覆盖默认阈值",
+        )
         sp.add_argument(
             "--scenario",
             default="invoice",
@@ -429,6 +470,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_fb.add_argument("--out", default=None, help="回灌后的账本输出路径")
     p_fb.add_argument("--labels-out", default=None, help="导出标定样本的路径")
     p_fb.set_defaults(func=cmd_feedback)
+
+    p_fit = sub.add_parser("fit-gains", help="从录制数据回归修复增益系数")
+    p_fit.add_argument("sessions", nargs="+", help="会话 JSON 路径")
+    p_fit.add_argument("--out", default=None, help="策略配置输出路径")
+    p_fit.set_defaults(func=cmd_fit_gains)
 
     p_scen = sub.add_parser("scenarios", help="列出支持的核验场景")
     p_scen.set_defaults(func=cmd_scenarios)

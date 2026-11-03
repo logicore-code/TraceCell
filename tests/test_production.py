@@ -280,3 +280,111 @@ class TestAudit:
         assert log.summary()["by_kind"]["decision"] == 1
         assert "决策" not in log.to_json() or True  # 只确认能序列化
         assert log.to_csv().startswith("时间,类型,文档,详情")
+
+
+class TestPolicyFromCalibration:
+    """阈值与增益系数不该写死在代码里。"""
+
+    def _samples(self, tmp_path):
+        path = tmp_path / "labelled.json"
+        path.write_text(
+            json.dumps(
+                [
+                    {"score": 0.99, "correct": True, "category": "text"},
+                    {"score": 0.97, "correct": True, "category": "text"},
+                    {"score": 0.30, "correct": False, "category": "text"},
+                    {"score": 0.20, "correct": False, "category": "text"},
+                ],
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+        return path
+
+    def test_threshold_comes_from_the_labeled_samples(self, tmp_path):
+        from tracecell.policy import BudgetPolicy
+
+        policy = BudgetPolicy.from_calibration(self._samples(tmp_path), target_accuracy=0.99)
+        assert policy.accept_threshold > 0.9
+        assert policy.calibration["source"].endswith("labelled.json")
+        assert policy.calibration["accept_accuracy"] >= 0.99
+
+    def test_policy_roundtrips_through_json(self):
+        from tracecell.policy import BudgetPolicy
+
+        policy = BudgetPolicy()
+        policy.repair_gains = {"reparse": 0.22}
+        policy.calibration = {"threshold": 0.92}
+        restored = BudgetPolicy.from_dict(policy.to_dict())
+        assert restored.repair_gains["reparse"] == pytest.approx(0.22)
+        assert restored.calibration["threshold"] == pytest.approx(0.92)
+
+
+class TestFitRepairGains:
+    """增益系数从录制数据里回归，不是拍脑袋。"""
+
+    def _sessions(self):
+        return [
+            {
+                "documents": [
+                    {
+                        "regions": [
+                            {
+                                "candidates": [
+                                    {"text": "A", "origin": "primary", "score": 0.30},
+                                    {"text": "B", "origin": "reparse-16x", "score": 0.80},
+                                ]
+                            },
+                            {
+                                "candidates": [
+                                    {"text": "C", "origin": "primary", "score": 0.70},
+                                    {"text": "D", "origin": "reparse-16x", "score": 0.40},
+                                ]
+                            },
+                        ]
+                    }
+                ]
+            }
+        ]
+
+    def test_gain_reflects_the_recorded_outcomes(self):
+        from tracecell.budget import fit_repair_gains
+
+        gains = fit_repair_gains(self._sessions())
+        # 样本只有两条，先验占大头，结果应该落在先验附近而不是直接跳到 0.5
+        assert 0.35 <= gains["reparse"] <= 0.45
+        assert "best_of_n" in gains
+        assert "vlm_escalation" in gains
+
+    def test_enough_samples_move_the_estimate(self):
+        """样本足够多时，估计应该跟着数据走。"""
+
+        from tracecell.budget import fit_repair_gains
+
+        regions = [
+            {
+                "candidates": [
+                    {"text": "A", "origin": "primary", "score": 0.30},
+                    {"text": "B", "origin": "reparse-16x", "score": 0.80},
+                ]
+            }
+            for _ in range(40)
+        ]
+        gains = fit_repair_gains([{"documents": [{"regions": regions}]}])
+        assert gains["reparse"] > 0.9
+
+    def test_policy_uses_the_fitted_gains(self):
+        from tracecell.budget import BudgetPlanner
+        from tracecell.policy import BudgetPolicy
+
+        policy = BudgetPolicy()
+        policy.repair_gains = {"reparse": 0.05}
+        planner = BudgetPlanner(policy)
+        plans = planner.candidate_actions(
+            __import__("tracecell.budget", fromlist=["CellState"]).CellState(
+                region_id="r0", confidence=0.5, severity=Severity.CRITICAL
+            )
+        )
+        reparse = next(p for p in plans if p.action == "reparse")
+        # 增益 0.05 远小于默认的 0.35，期望置信度应该明显更低
+        assert reparse.expected_confidence < 0.5 + 0.5 * 0.35
