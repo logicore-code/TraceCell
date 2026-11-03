@@ -56,6 +56,28 @@ class ReplaySession:
     def load(cls, path: str | Path) -> "ReplaySession":
         return cls(json.loads(Path(path).read_text(encoding="utf-8")))
 
+    @classmethod
+    def load_dir(cls, directory: str | Path) -> "ReplaySession":
+        """把一个目录下的所有会话文件合并。
+
+        样例按场景分文件存放（发票、合同、报销单一份，财务报表和购销合同
+        一份），跑完整链路时需要一起加载。
+        """
+
+        merged: dict[str, Any] = {"documents": []}
+        for path in sorted(Path(directory).glob("*.json")):
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            for document in data.get("documents", []):
+                # 只收能回放的会话（带 regions）。同目录下的 real_ocr.json
+                # 记的是模型原始输出，doc_id 会跟会话撞车，不能混进来。
+                if "regions" not in document:
+                    continue
+                merged["documents"].append(document)
+        return cls(merged)
+
     def document(self, doc_id: str) -> dict[str, Any] | None:
         return self.documents.get(doc_id)
 
@@ -100,7 +122,12 @@ class ReplayParser:
         return PageParse(
             regions=regions,
             markdown=document.get("markdown", ""),
-            meta={"replayed": True, "doc_id": self.doc_id},
+            meta={
+                "replayed": True,
+                "doc_id": self.doc_id,
+                "scenario": document.get("schema", ""),
+                "scenario_label": document.get("label", ""),
+            },
         )
 
     def parse_region(self, image: bytes, bbox: BBox | None = None, profile: ParseProfile | None = None) -> str:

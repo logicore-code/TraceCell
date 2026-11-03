@@ -19,7 +19,8 @@ from fastapi.staticfiles import StaticFiles
 
 from .. import __version__
 from ..agent.loop import VerificationLoop
-from ..extractors import build_extractor, schema_by_name
+from ..extractors import build_extractor
+from ..scenarios import list_scenarios
 from ..ledger import export_csv, export_markdown, ledger_summary
 from ..providers import layout as layout_mod
 from ..providers.jev import HttpJevScorer
@@ -62,9 +63,16 @@ def _load_sessions() -> dict[str, ReplaySession]:
     return sessions
 
 
+def _merged_session() -> ReplaySession:
+    """把 sessions 目录下的所有会话合并，样例按场景分文件存放。"""
+
+    return ReplaySession.load_dir(SESSIONS_DIR)
+
+
 def create_app(provider: str = "replay") -> FastAPI:
     app = FastAPI(title="TraceCell", version=__version__, description="可追责的文档解析 Agent")
     sessions = _load_sessions()
+    merged = _merged_session()
     store = Store()
 
     config = {
@@ -76,7 +84,7 @@ def create_app(provider: str = "replay") -> FastAPI:
         "vlm_model": os.environ.get("TRACECELL_VLM_MODEL", "openbmb/MiniCPM-V-4.7-35B-A3B"),
     }
 
-    def build_loop(doc_id: str, schema: str) -> VerificationLoop:
+    def build_loop(doc_id: str, scenario: str) -> VerificationLoop:
         policy = BudgetPolicy()
         risk = RiskPolicy()
         if provider == "minicpm":
@@ -84,7 +92,7 @@ def create_app(provider: str = "replay") -> FastAPI:
             scorer = HttpJevScorer(base_url=config["jev_url"])
             escalator = OpenAICompatVlm(base_url=config["vlm_url"], model=config["vlm_model"])
         else:
-            session = sessions.get("demo")
+            session = merged
             if session is None:
                 raise HTTPException(status_code=503, detail="没有可用的回放会话")
             parser = ReplayParser(session, doc_id)
@@ -96,8 +104,8 @@ def create_app(provider: str = "replay") -> FastAPI:
             escalator=escalator,
             policy=policy,
             risk_policy=risk,
-            extractor=build_extractor(schema),
-            schema=schema,
+            extractor=build_extractor(scenario),
+            scenario=scenario,
         )
 
     @app.get("/api/health")
@@ -106,7 +114,7 @@ def create_app(provider: str = "replay") -> FastAPI:
 
     @app.get("/api/samples")
     def samples() -> list[dict[str, Any]]:
-        session = sessions.get("demo")
+        session = merged
         if session is None:
             return []
         out = []
@@ -126,14 +134,14 @@ def create_app(provider: str = "replay") -> FastAPI:
     @app.get("/api/ledger/{doc_id}")
     def ledger(doc_id: str) -> JSONResponse:
         if doc_id not in store.ledgers:
-            session = sessions.get("demo")
+            session = merged
             document = session.document(doc_id) if session else None
             if document is None:
                 raise HTTPException(status_code=404, detail=f"没有文档 {doc_id}")
             image = _read_sample_image(document.get("source", ""))
-            schema = document.get("schema", "invoice")
-            report = build_loop(doc_id, schema).run(image, doc_id, document.get("source", ""))
-            store.put(report.ledger, image, {"schema": schema, "label": document.get("label", "")})
+            scenario = document.get("schema", "invoice")
+            report = build_loop(doc_id, scenario).run(image, doc_id, document.get("source", ""))
+            store.put(report.ledger, image, {"scenario": scenario, "label": document.get("label", "")})
         payload = store.ledgers[doc_id].to_dict()
         payload["summary"] = ledger_summary(store.ledgers[doc_id])
         payload["markdown"] = export_markdown(store.ledgers[doc_id])
@@ -141,14 +149,14 @@ def create_app(provider: str = "replay") -> FastAPI:
         return JSONResponse(payload)
 
     @app.post("/api/analyze")
-    async def analyze(file: UploadFile = File(...), schema: str = "invoice") -> JSONResponse:
+    async def analyze(file: UploadFile = File(...), scenario: str = "invoice") -> JSONResponse:
         content = await file.read()
         if not content:
             raise HTTPException(status_code=400, detail="空文件")
         doc_id = file.filename or "upload"
         doc_id = doc_id.rsplit(".", 1)[0]
-        report = build_loop(doc_id, schema).run(content, doc_id, file.filename or "")
-        store.put(report.ledger, content, {"schema": schema, "label": "上传文件"})
+        report = build_loop(doc_id, scenario).run(content, doc_id, file.filename or "")
+        store.put(report.ledger, content, {"scenario": scenario, "label": "上传文件"})
         payload = report.ledger.to_dict()
         payload["summary"] = ledger_summary(report.ledger)
         return JSONResponse(payload)

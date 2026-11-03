@@ -24,7 +24,7 @@ from typing import Any, Callable
 from .. import __version__
 from ..agent.loop import VerificationLoop
 from ..calibration import calibrate, load_samples
-from ..extractors import build_extractor, schema_by_name
+from ..extractors import build_extractor
 from ..ledger import export_csv, export_markdown, ledger_summary
 from ..providers.replay import ReplayEscalator, ReplayParser, ReplayScorer, ReplaySession
 from ..reconcile import findings_from_reconciliation, reconcile
@@ -46,7 +46,10 @@ class TraceCellService:
         self.session_path = Path(session_path) if session_path else None
         self.session: ReplaySession | None = None
         if self.session_path and self.session_path.exists():
-            self.session = ReplaySession.load(self.session_path)
+            if self.session_path.is_dir():
+                self.session = ReplaySession.load_dir(self.session_path)
+            else:
+                self.session = ReplaySession.load(self.session_path)
         self.ledgers: dict[str, DocumentLedger] = {}
 
     # -- 工具实现 ---------------------------------------------------------
@@ -159,13 +162,13 @@ class TraceCellService:
         document = self.session.document(doc_id)
         if document is None:
             raise ToolError(f"回放会话里没有文档 {doc_id}")
-        schema = document.get("schema", "invoice")
+        scenario = document.get("schema", "invoice")
         loop = VerificationLoop(
             parser=ReplayParser(self.session, doc_id),
             scorer=ReplayScorer(self.session, doc_id),
             escalator=ReplayEscalator(self.session, doc_id),
-            extractor=build_extractor(schema),
-            schema=schema,
+            extractor=build_extractor(scenario),
+            scenario=scenario,
         )
         report = loop.run(b"", doc_id, document.get("source", ""))
         self.ledgers[doc_id] = report.ledger
@@ -395,7 +398,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="TraceCell MCP 服务")
     parser.add_argument(
         "--session",
-        default="samples/sessions/demo.json",
+        default="samples/sessions",
         help="回放会话路径（离线演示用）",
     )
     args = parser.parse_args(argv)

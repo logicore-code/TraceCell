@@ -19,7 +19,8 @@ from pathlib import Path
 from . import __version__
 from .agent.loop import VerificationLoop
 from .calibration import calibrate, load_samples, per_category_stats
-from .extractors import build_extractor, schema_by_name
+from .extractors import build_extractor
+from .scenarios import list_scenarios
 from .ledger import export_csv, export_markdown, ledger_summary
 from .policy import BudgetPolicy, RiskPolicy
 from .providers.jev import HttpJevScorer
@@ -29,7 +30,7 @@ from .providers.vlm import OpenAICompatVlm
 from .reconcile import merge_ledgers, reconcile
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_SESSION = ROOT / "samples" / "sessions" / "demo.json"
+DEFAULT_SESSION = ROOT / "samples" / "sessions"
 
 
 def _read_bytes(path: str) -> bytes:
@@ -40,41 +41,52 @@ def _read_bytes(path: str) -> bytes:
 
 
 def _build_components(args, doc_id: str):
-    """按 provider 组装三个模型的客户端。"""
+    """按 provider 组装三个模型的客户端，同时确定这份文档的场景。"""
 
     if args.provider == "minicpm":
         parser = OpenAICompatOcr(base_url=args.ocr_url, model=args.ocr_model)
         scorer = HttpJevScorer(base_url=args.jev_url)
         escalator = OpenAICompatVlm(base_url=args.vlm_url, model=args.vlm_model)
-    else:
-        session = ReplaySession.load(args.session)
-        if doc_id not in session.doc_ids():
-            raise SystemExit(
-                f"回放会话里没有文档 {doc_id}，可选：{', '.join(session.doc_ids())}"
-            )
-        parser = ReplayParser(session, doc_id)
-        scorer = ReplayScorer(session, doc_id)
-        escalator = ReplayEscalator(session, doc_id)
-    return parser, scorer, escalator
+        return parser, scorer, escalator, args.scenario
+
+    session = _load_session(args.session)
+    if doc_id not in session.doc_ids():
+        raise SystemExit(f"回放会话里没有文档 {doc_id}，可选：{', '.join(session.doc_ids())}")
+    document = session.document(doc_id) or {}
+    scenario = document.get("schema") or args.scenario
+    parser = ReplayParser(session, doc_id)
+    scorer = ReplayScorer(session, doc_id)
+    escalator = ReplayEscalator(session, doc_id)
+    return parser, scorer, escalator, scenario
 
 
-def _build_loop(args, doc_id: str, schema: str) -> VerificationLoop:
-    parser, scorer, escalator = _build_components(args, doc_id)
+def _build_loop(args, doc_id: str, scenario: str | None = None) -> VerificationLoop:
+    parser, scorer, escalator, detected = _build_components(args, doc_id)
+    scenario = scenario or detected
     return VerificationLoop(
         parser=parser,
         scorer=scorer,
         escalator=escalator,
         policy=BudgetPolicy(),
         risk_policy=RiskPolicy(),
-        extractor=build_extractor(schema),
-        schema=schema,
+        extractor=build_extractor(scenario),
+        scenario=scenario,
     )
+
+
+def _load_session(path: str) -> ReplaySession:
+    """加载会话。给目录就合并目录下的所有会话文件。"""
+
+    target = Path(path)
+    if target.is_dir():
+        return ReplaySession.load_dir(target)
+    return ReplaySession.load(target)
 
 
 def cmd_parse(args) -> int:
     image = _read_bytes(args.image)
     doc_id = args.doc_id or Path(args.image).stem
-    loop = _build_loop(args, doc_id, args.schema)
+    loop = _build_loop(args, doc_id, args.scenario)
     report = loop.run(image, doc_id, args.image)
     ledger = report.ledger
 
@@ -100,11 +112,10 @@ def cmd_parse(args) -> int:
 
 
 def cmd_demo(args) -> int:
-    session = ReplaySession.load(args.session)
+    session = _load_session(args.session)
     for doc_id in session.doc_ids():
         document = session.document(doc_id) or {}
-        schema = document.get("schema", "invoice")
-        loop = _build_loop(args, doc_id, schema)
+        loop = _build_loop(args, doc_id)
         report = loop.run(b"", doc_id, document.get("source", ""))
         ledger = report.ledger
         summary = ledger_summary(ledger)
@@ -152,6 +163,17 @@ def cmd_case(args) -> int:
             print()
             for note in result.notes:
                 print(f"  · {note}")
+    return 0
+
+
+def cmd_scenarios(args) -> int:
+    """列出支持的场景及其勾稽关系。"""
+
+    for item in list_scenarios():
+        print(f"{item['name']:20s} {item['label']}")
+        print(f"{'':20s} {item['description']}")
+        print(f"{'':20s} 字段 {item['field_count']} 个，勾稽关系 {item['rule_count']} 条")
+        print()
     return 0
 
 
@@ -257,11 +279,16 @@ def build_parser() -> argparse.ArgumentParser:
         sp.add_argument("--jev-url", default="http://127.0.0.1:8030")
         sp.add_argument("--vlm-url", default="http://127.0.0.1:8001")
         sp.add_argument("--vlm-model", default="openbmb/MiniCPM-V-4.7-35B-A3B")
+        sp.add_argument(
+            "--scenario",
+            default="invoice",
+            choices=[item["name"] for item in list_scenarios()],
+            help="核验场景，决定抽哪些字段、查哪些勾稽关系",
+        )
 
     p_parse = sub.add_parser("parse", help="解析并核验一份文档")
     p_parse.add_argument("image")
     p_parse.add_argument("--doc-id", default=None)
-    p_parse.add_argument("--schema", default="invoice", choices=["invoice", "contract", "expense"])
     p_parse.add_argument("--format", default="markdown", choices=["markdown", "json", "csv"])
     p_parse.add_argument("--out", default=None, help="把账本 JSON 存到这里")
     add_provider_args(p_parse)
@@ -280,6 +307,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_case.add_argument("--format", default="text", choices=["text", "json"])
     add_provider_args(p_case)
     p_case.set_defaults(func=cmd_case)
+
+    p_scen = sub.add_parser("scenarios", help="列出支持的核验场景")
+    p_scen.set_defaults(func=cmd_scenarios)
 
     p_serve = sub.add_parser("serve", help="启动 Web 界面")
     p_serve.add_argument("--host", default="127.0.0.1")

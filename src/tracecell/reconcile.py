@@ -1,23 +1,24 @@
-"""跨文档对账。
+"""跨文档对账与单据内部勾稽校验。
 
-单份文档识别得再准，也可能出现两份都识别正确、但互相矛盾的情况：合同
-里的金额是 186,800，发票上是 168,800；合同甲方写的是"杭州明远科技"，
-营业执照上是"杭州明远科技有限公司"。
+两类问题都归到这里：
 
-OCR 质量模型解决不了这类问题——它只知道自己那一份文档看得对不对。
-TraceCell 把对账放在证据层：矛盾项同样带着两侧的坐标和候选，人看一眼
-就能判断谁对谁错。
+* **单据内部**：明细加起来对不对等于合计，数量乘单价对不对等于金额。
+* **跨文档**：同一笔业务在不同单据上的落点对不对得上。
 
-字段类型靠字段名推断（金额 / 日期 / 主体），不同类型用不同的归一化规则，
-避免把"¥186,800.00"和"186800"当成两个数。
+跨文档这一类以前是靠字段名撞车比对的，靠不住——合同叫"乙方"、发票叫
+"销售方名称"，根本撞不上。现在改成按场景显式配对（见 scenarios.py 的
+CROSS_RULES），顺带修掉一个隐患：以前发票的"金额"和报销单的"金额"会被
+拿去互比，128,600 和 2,864.50 一比就是个假矛盾。
 """
 
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass, field
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Any
 
+from .scenarios import CROSS_RULES, ConsistencyRule, cross_rules_for
 from .textnorm import (
     normalize,
     normalize_date,
@@ -25,11 +26,12 @@ from .textnorm import (
     normalize_money,
     similarity,
 )
-from .types import DocumentLedger, Finding, Severity, Status
+from .types import DocumentLedger, FieldValue, Finding, Severity, Status
 
-MONEY_KEYWORDS = ("金额", "合计", "税额", "单价", "价款", "总额", "应付", "实付")
+MONEY_KEYWORDS = ("金额", "合计", "税额", "单价", "价款", "总额", "应付", "实付", "总计")
 DATE_KEYWORDS = ("日期", "签署", "开票", "到期", "生效", "期限", "年", "月", "日")
-ENTITY_KEYWORDS = ("名称", "甲方", "乙方", "卖方", "买方", "供应商", "客户", "收款人", "付款人")
+ENTITY_KEYWORDS = ("名称", "甲方", "乙方", "需方", "供方", "卖方", "买方", "供应商", "客户",
+                    "收款人", "付款人", "单位")
 
 
 def infer_kind(field_name: str) -> str:
@@ -44,10 +46,10 @@ def infer_kind(field_name: str) -> str:
     return "text"
 
 
-def normalize_by_kind(field_name: str, value: str) -> str:
+def normalize_by_kind(field_name: str, value: str, kind: str | None = None) -> str:
     """按字段类型归一化，用于比较。"""
 
-    kind = infer_kind(field_name)
+    kind = kind or infer_kind(field_name)
     if kind == "money":
         return normalize_money(value) or normalize(value)
     if kind == "date":
@@ -57,14 +59,32 @@ def normalize_by_kind(field_name: str, value: str) -> str:
     return normalize(value)
 
 
+def to_number(value: str) -> float | None:
+    """把数值字段转成浮点。
+
+    乘法勾稽要用：数量是"50"，单价是"2,572.00"，税率是"13%"。
+    """
+
+    if not value:
+        return None
+    cleaned = normalize(value).replace("¥", "").replace("￥", "").replace("%", "")
+    cleaned = cleaned.replace(",", "")
+    try:
+        return float(cleaned)
+    except ValueError:
+        return None
+
+
 @dataclass
 class Mismatch:
-    """一处跨文档矛盾。"""
+    """一处矛盾。"""
 
     field_name: str
     values: list[dict[str, Any]] = field(default_factory=list)
     kind: str = "text"
     note: str = ""
+    left_field: str = ""
+    right_field: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -72,6 +92,8 @@ class Mismatch:
             "kind": self.kind,
             "values": self.values,
             "note": self.note,
+            "left_field": self.left_field,
+            "right_field": self.right_field,
         }
 
 
@@ -83,6 +105,7 @@ class ReconciliationResult:
     matched: int = 0
     mismatches: list[Mismatch] = field(default_factory=list)
     single_source: list[str] = field(default_factory=list)
+    pairs: list[dict[str, Any]] = field(default_factory=list)
 
     @property
     def consistent(self) -> bool:
@@ -95,132 +118,254 @@ class ReconciliationResult:
             "mismatch_count": len(self.mismatches),
             "mismatches": [m.to_dict() for m in self.mismatches],
             "single_source": self.single_source,
+            "pairs": self.pairs,
         }
 
 
-def _collect(ledgers: list[DocumentLedger]) -> dict[str, list[tuple[DocumentLedger, Any]]]:
-    grouped: dict[str, list[tuple[DocumentLedger, Any]]] = {}
-    for ledger in ledgers:
-        for fld in ledger.fields:
-            if not fld.value:
-                continue
-            grouped.setdefault(fld.name, []).append((ledger, fld))
-    return grouped
+def _scenario_of(ledger: DocumentLedger) -> str:
+    return str(ledger.meta.get("scenario", ""))
 
 
-def reconcile(
-    ledgers: list[DocumentLedger],
-    entity_similarity: float = 0.85,
-) -> ReconciliationResult:
-    """多份文档之间做字段级对账。
+def _collect_pairs(ledgers: list[DocumentLedger]) -> list[dict[str, Any]]:
+    """找出所有该比对的字段对。
 
-    entity_similarity 是主体名称的相似度门槛。低于它的视为不一致——
-    因为"杭州明远科技"和"杭州明远科技公司"在法律上是两个主体，不该
-    因为字面接近就放过。
+    两条来源：场景显式配对（跨文档），以及同场景同名字段（同一类单据之间）。
     """
 
-    result = ReconciliationResult()
-    grouped = _collect(ledgers)
+    scenarios = [_scenario_of(ledger) for ledger in ledgers]
+    pairs: list[dict[str, Any]] = []
+    covered: set[tuple[str, str, str, str]] = set()
 
-    for name, entries in grouped.items():
-        if len(entries) < 2:
-            result.single_source.append(name)
+    for rule in cross_rules_for(scenarios):
+        for left in ledgers:
+            if _scenario_of(left) != rule.left_scenario:
+                continue
+            for right in ledgers:
+                if right.doc_id == left.doc_id or _scenario_of(right) != rule.right_scenario:
+                    continue
+                left_field = left.field(rule.left_field)
+                right_field = right.field(rule.right_field)
+                if left_field is None or right_field is None:
+                    continue
+                key = (left.doc_id, rule.left_field, right.doc_id, rule.right_field)
+                covered.add(key)
+                covered.add((right.doc_id, rule.right_field, left.doc_id, rule.left_field))
+                pairs.append(
+                    {
+                        "left": left,
+                        "left_field": left_field,
+                        "right": right,
+                        "right_field": right_field,
+                        "kind": rule.kind,
+                        "label": f"{rule.left_field} ↔ {rule.right_field}",
+                        "source": "cross-rule",
+                    }
+                )
+
+    grouped: dict[tuple[str, str], list[tuple[DocumentLedger, FieldValue]]] = defaultdict(list)
+    for ledger in ledgers:
+        for fld in ledger.fields:
+            grouped[(_scenario_of(ledger), fld.name)].append((ledger, fld))
+
+    for (scenario, name), items in grouped.items():
+        for index in range(len(items)):
+            for other in range(index + 1, len(items)):
+                left_ledger, left_field = items[index]
+                right_ledger, right_field = items[other]
+                if left_ledger.doc_id == right_ledger.doc_id:
+                    continue
+                key = (left_ledger.doc_id, name, right_ledger.doc_id, name)
+                if key in covered:
+                    continue
+                covered.add(key)
+                covered.add((right_ledger.doc_id, name, left_ledger.doc_id, name))
+                pairs.append(
+                    {
+                        "left": left_ledger,
+                        "left_field": left_field,
+                        "right": right_ledger,
+                        "right_field": right_field,
+                        "kind": infer_kind(name),
+                        "label": name,
+                        "source": "same-scenario",
+                    }
+                )
+
+    return pairs
+
+
+def reconcile(ledgers: list[DocumentLedger], entity_similarity: float = 0.85) -> ReconciliationResult:
+    """多份文档之间做字段级对账。"""
+
+    result = ReconciliationResult()
+    pairs = _collect_pairs(ledgers)
+    result.pairs = [
+        {
+            "left": pair["left"].doc_id,
+            "left_field": pair["left_field"].name,
+            "right": pair["right"].doc_id,
+            "right_field": pair["right_field"].name,
+            "kind": pair["kind"],
+            "source": pair["source"],
+        }
+        for pair in pairs
+    ]
+
+    for pair in pairs:
+        result.compared_fields += 1
+        left_field = pair["left_field"]
+        right_field = pair["right_field"]
+        kind = pair["kind"]
+
+        left_value = normalize_by_kind(left_field.name, left_field.value, kind)
+        right_value = normalize_by_kind(right_field.name, right_field.value, kind)
+
+        conflict = False
+        if kind == "entity" and left_value != right_value:
+            # 主体名称用相似度而不是精确匹配："杭州明远科技"和"杭州明远科技
+            # 公司"在法律上是两个主体，不该因为字面接近就放过。
+            conflict = similarity(left_field.value, right_field.value) < entity_similarity
+        else:
+            conflict = left_value != right_value
+
+        if not conflict:
+            result.matched += 1
             continue
 
-        result.compared_fields += 1
-        kind = infer_kind(name)
-        normalized = [(ledger, fld, normalize_by_kind(name, fld.value)) for ledger, fld in entries]
-
-        distinct = {value for _, _, value in normalized if value}
-        conflict = False
-        if kind == "entity" and len(distinct) > 1:
-            base = normalized[0][2]
-            conflict = all(similarity(base, other) < entity_similarity for _, _, other in normalized[1:])
-        elif len(distinct) > 1:
-            conflict = True
-
-        if conflict:
-            mismatch = Mismatch(
-                field_name=name,
+        label = pair["label"]
+        result.mismatches.append(
+            Mismatch(
+                field_name=label,
                 kind=kind,
-                note=_conflict_note(kind, normalized),
+                left_field=left_field.name,
+                right_field=right_field.name,
+                note=_conflict_note(kind, pair),
                 values=[
                     {
-                        "doc_id": ledger.doc_id,
-                        "value": fld.value,
-                        "normalized": value,
-                        "confidence": round(fld.confidence, 4),
-                        "region_ids": list(fld.region_ids),
-                    }
-                    for ledger, fld, value in normalized
+                        "doc_id": pair["left"].doc_id,
+                        "value": left_field.value,
+                        "normalized": left_value,
+                        "confidence": round(left_field.confidence, 4),
+                        "region_ids": list(left_field.region_ids),
+                        "field": left_field.name,
+                    },
+                    {
+                        "doc_id": pair["right"].doc_id,
+                        "value": right_field.value,
+                        "normalized": right_value,
+                        "confidence": round(right_field.confidence, 4),
+                        "region_ids": list(right_field.region_ids),
+                        "field": right_field.name,
+                    },
                 ],
             )
-            result.mismatches.append(mismatch)
-            for ledger, fld, _ in normalized:
-                fld.status = Status.DISPUTED
-                fld.note = f"与《{mismatch.note}》存在跨文档矛盾"
-        else:
-            result.matched += 1
+        )
+        for side in (left_field, right_field):
+            side.status = Status.DISPUTED
+
+    # 只在一份文档里出现、又没被任何配对覆盖的字段
+    paired_names = {pair["left_field"].name for pair in pairs} | {
+        pair["right_field"].name for pair in pairs
+    }
+    counts: dict[str, int] = defaultdict(int)
+    for ledger in ledgers:
+        for fld in ledger.fields:
+            counts[fld.name] += 1
+    result.single_source = sorted(
+        name
+        for name, count in counts.items()
+        if count == 1 and name not in paired_names
+    )
 
     return result
 
 
-def _conflict_note(kind: str, normalized: list[tuple[Any, Any, str]]) -> str:
-    doc_ids = ", ".join(sorted({ledger.doc_id for ledger, _, _ in normalized}))
+def _conflict_note(kind: str, pair: dict[str, Any]) -> str:
+    left = pair["left"].doc_id
+    right = pair["right"].doc_id
     if kind == "money":
-        return f"金额不一致（{doc_ids}）"
+        return f"金额不一致（{left} ↔ {right}）"
     if kind == "date":
-        return f"日期不一致（{doc_ids}）"
+        return f"日期不一致（{left} ↔ {right}）"
     if kind == "entity":
-        return f"主体名称不一致（{doc_ids}）"
-    return f"取值不一致（{doc_ids}）"
+        return f"主体名称不一致（{left} ↔ {right}）"
+    return f"取值不一致（{left} ↔ {right}）"
 
 
-def check_sum_consistency(fields: list[FieldValue], rule) -> list[Finding]:
-    """单据内部的加总校验：明细加起来等于不等于合计。
+def check_sum_consistency(fields: list[FieldValue], rules: list[ConsistencyRule]) -> list[Finding]:
+    """单据内部的勾稽校验。
 
-    这类矛盾是 OCR 质量模型管不了的——明细行和合计行都识别正确，错的是
-    单据本身。两边读数之间的不一致，只有做加总校验才能发现。
+    支持两种关系：sum（分项加总等于总数）和 product（各因子之积等于结果）。
+    这类矛盾 OCR 质量模型解决不了——分项和总数都识别正确，错的是单据本身。
     """
 
-    if rule is None:
-        return []
-    total_field = next((f for f in fields if f.name == rule.total), None)
-    if total_field is None:
-        return []
-    components = [f for f in fields if rule.matches(f.name)]
-    if len(components) < 2:
-        return []
+    findings: list[Finding] = []
+    for rule in rules:
+        total_field = next((f for f in fields if f.name == rule.total), None)
+        if total_field is None:
+            continue
+        # 分项按前缀组匹配：规则写"明细"，对应的是"明细:差旅费"这一组字段；
+        # 规则写"金额"，且存在同名字段时就是那一个。
+        chosen: list[FieldValue] = []
+        for name in rule.components:
+            exact = next((f for f in fields if f.name == name), None)
+            if exact is not None:
+                chosen.append(exact)
+                continue
+            group = [f for f in fields if f.name.startswith(f"{name}:")]
+            if not group:
+                break
+            chosen.extend(group)
+        if len(chosen) < len(rule.components):
+            continue
 
-    total_value = normalize_money(total_field.value)
-    if total_value is None:
-        return []
-    amounts = []
-    for component in components:
-        amount = normalize_money(component.value)
-        if amount is None:
-            return []
-        amounts.append(Decimal(amount))
+        if rule.kind == "product":
+            numbers = [to_number(f.value) for f in chosen]
+            if any(n is None for n in numbers):
+                continue
+            expected = 1.0
+            for number in numbers:
+                expected *= number
+            actual = to_number(total_field.value)
+            if actual is None:
+                continue
+            difference = expected - actual
+            unit = " × ".join(f"{f.name.split(':')[-1]} {f.value}" for f in chosen)
+            detail = f"{total_field.name} {total_field.value}，按 {unit} 应为 {expected:,.2f}"
+        else:
+            amounts = []
+            broken = False
+            for component in chosen:
+                amount = normalize_money(component.value)
+                if amount is None:
+                    broken = True
+                    break
+                amounts.append(Decimal(amount))
+            if broken:
+                continue
+            expected_dec = sum(amounts, Decimal("0"))
+            total_amount = normalize_money(total_field.value)
+            if total_amount is None:
+                continue
+            difference = float(expected_dec - Decimal(total_amount))
+            unit = "、".join(f"{f.name.split(':')[-1]} {f.value}" for f in chosen)
+            detail = f"{total_field.name} {total_field.value}，明细 {unit} 合计 {expected_dec:,.2f}"
 
-    difference = sum(amounts) - Decimal(total_value)
-    if abs(difference) <= Decimal(str(rule.tolerance)):
-        return []
+        if abs(difference) <= rule.tolerance:
+            continue
 
-    detail = "、".join(f"{c.name.split(':')[-1]} {c.value}" for c in components)
-    return [
-        Finding(
-            kind="sum_mismatch",
-            severity=Severity.CRITICAL,
-            message=(
-                f"明细加总 {sum(amounts):.2f} 与「{rule.total}」{total_value} 不一致，"
-                f"差额 {difference:+.2f}（明细：{detail}）"
-            ),
-            region_ids=[rid for c in components for rid in c.region_ids]
-            + list(total_field.region_ids),
-            field_names=[c.name for c in components] + [total_field.name],
-            suggestion="核对明细行与合计，确认是单据笔误还是识别错误",
+        findings.append(
+            Finding(
+                kind="sum_mismatch",
+                severity=Severity.CRITICAL,
+                message=f"勾稽不符：{detail}，差额 {difference:+,.2f}",
+                region_ids=[rid for c in chosen for rid in c.region_ids]
+                + list(total_field.region_ids),
+                field_names=[c.name for c in chosen] + [total_field.name],
+                suggestion="核对这一项，确认是单据笔误还是识别错误",
+            )
         )
-    ]
+    return findings
 
 
 def findings_from_reconciliation(result: ReconciliationResult) -> list[Finding]:
@@ -232,12 +377,12 @@ def findings_from_reconciliation(result: ReconciliationResult) -> list[Finding]:
         field_names: list[str] = []
         for entry in mismatch.values:
             region_ids.extend(entry.get("region_ids", []))
-            field_names.append(entry["doc_id"])
+            field_names.append(entry.get("field") or entry["doc_id"])
         findings.append(
             Finding(
                 kind="contradiction",
                 severity=Severity.CRITICAL if mismatch.kind in ("money", "entity") else Severity.HIGH,
-                message=f"字段「{mismatch.field_name}」在多份文档之间不一致：{mismatch.note}",
+                message=f"跨文档矛盾：{mismatch.note}",
                 region_ids=region_ids,
                 field_names=field_names,
                 suggestion="核对各文档原件，确认以哪一份为准",
@@ -259,7 +404,6 @@ def merge_ledgers(ledgers: list[DocumentLedger]) -> DocumentLedger:
     )
     for ledger in ledgers:
         for region in ledger.regions:
-            # 区域 id 在不同文档间可能撞车，加文档前缀。
             region.id = f"{ledger.doc_id}:{region.id}"
             merged.regions.append(region)
         for fld in ledger.fields:

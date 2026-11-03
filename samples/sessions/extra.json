@@ -1,0 +1,857 @@
+{
+  "documents": [
+    {
+      "doc_id": "financial-statement-001",
+      "source": "samples/financial_statement_001.png",
+      "label": "资产负债表",
+      "schema": "financial_statement",
+      "description": "所有者权益合计印得偏浅又偏小，重解析读出的数与首次不一致；营业收入比当期发票金额少 600 元，属于跨文档矛盾。",
+      "markdown": "# 资产负债表\n\n编制单位：杭州明远网络科技有限公司\n报表期间：2026年10月\n\n| 项目 | 期末余额 |\n| --- | --- |\n| 流动资产合计 | ¥12,860,000.00 |\n| 非流动资产合计 | ¥8,140,000.00 |\n| 资产总计 | ¥21,000,000.00 |\n| 负债合计 | ¥6,800,000.00 |\n| 所有者权益合计 | ¥14,100,000.00 |\n| 负债和所有者权益总计 | ¥21,000,000.00 |\n| 营业收入 | ¥128,000.00 |\n| 净利润 | ¥2,460,000.00 |\n\n单位：人民币元",
+      "regions": [
+        {
+          "id": "r000",
+          "page": 1,
+          "bbox": {
+            "x0": 0.379839,
+            "y0": 0.085519,
+            "x1": 0.620161,
+            "y1": 0.114025
+          },
+          "category": "text",
+          "text": "资产负债表",
+          "candidates": [
+            {
+              "text": "资产负债表",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.99
+            },
+            {
+              "text": "资产负债表",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.97
+            }
+          ]
+        },
+        {
+          "id": "r001",
+          "page": 1,
+          "bbox": {
+            "x0": 0.102419,
+            "y0": 0.164196,
+            "x1": 0.408871,
+            "y1": 0.18016
+          },
+          "category": "text",
+          "text": "编制单位：杭州明远网络科技有限公司",
+          "candidates": [
+            {
+              "text": "编制单位：杭州明远网络科技有限公司",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.98
+            }
+          ]
+        },
+        {
+          "id": "r002",
+          "page": 1,
+          "bbox": {
+            "x0": 0.7,
+            "y0": 0.164196,
+            "x1": 0.887903,
+            "y1": 0.18016
+          },
+          "category": "text",
+          "text": "报表期间：2026年10月",
+          "candidates": [
+            {
+              "text": "报表期间：2026年10月",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.98
+            }
+          ]
+        },
+        {
+          "id": "r003",
+          "page": 1,
+          "bbox": {
+            "x0": 0.11371,
+            "y0": 0.222919,
+            "x1": 0.152419,
+            "y1": 0.237742
+          },
+          "category": "table",
+          "text": "项目",
+          "candidates": [
+            {
+              "text": "项目",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.97
+            }
+          ]
+        },
+        {
+          "id": "r004",
+          "page": 1,
+          "bbox": {
+            "x0": 0.815323,
+            "y0": 0.222349,
+            "x1": 0.887903,
+            "y1": 0.238312
+          },
+          "category": "table",
+          "text": "期末余额",
+          "candidates": [
+            {
+              "text": "期末余额",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.97
+            }
+          ]
+        },
+        {
+          "id": "r005",
+          "page": 1,
+          "bbox": {
+            "x0": 0.11371,
+            "y0": 0.259977,
+            "x1": 0.879839,
+            "y1": 0.277081
+          },
+          "category": "text",
+          "text": "流动资产合计：¥12,860,000.00",
+          "candidates": [
+            {
+              "text": "流动资产合计：¥12,860,000.00",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.95
+            }
+          ]
+        },
+        {
+          "id": "r006",
+          "page": 1,
+          "bbox": {
+            "x0": 0.11371,
+            "y0": 0.31927,
+            "x1": 0.879839,
+            "y1": 0.336374
+          },
+          "category": "text",
+          "text": "非流动资产合计：¥8,140,000.00",
+          "candidates": [
+            {
+              "text": "非流动资产合计：¥8,140,000.00",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.95
+            }
+          ]
+        },
+        {
+          "id": "r007",
+          "page": 1,
+          "bbox": {
+            "x0": 0.11371,
+            "y0": 0.378563,
+            "x1": 0.879839,
+            "y1": 0.395667
+          },
+          "category": "text",
+          "text": "资产总计：¥21,000,000.00",
+          "candidates": [
+            {
+              "text": "资产总计：¥21,000,000.00",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.95
+            }
+          ]
+        },
+        {
+          "id": "r008",
+          "page": 1,
+          "bbox": {
+            "x0": 0.11371,
+            "y0": 0.437856,
+            "x1": 0.879839,
+            "y1": 0.45496
+          },
+          "category": "text",
+          "text": "负债合计：¥6,800,000.00",
+          "candidates": [
+            {
+              "text": "负债合计：¥6,800,000.00",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.95
+            }
+          ]
+        },
+        {
+          "id": "r009",
+          "page": 1,
+          "bbox": {
+            "x0": 0.11371,
+            "y0": 0.496579,
+            "x1": 0.879839,
+            "y1": 0.512543
+          },
+          "category": "text",
+          "text": "所有者权益合计：¥14,100,000.00",
+          "candidates": [
+            {
+              "text": "所有者权益合计：¥14,100,000.00",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.93
+            },
+            {
+              "text": "所有者权益合计：¥14,100,900.00",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.41
+            },
+            {
+              "text": "所有者权益合计：¥14,100,000.00",
+              "origin": "vlm-review",
+              "verdict": "scored",
+              "score": 0.95,
+              "detail": "多模态复核确认印字，浅色小字但读数无误"
+            }
+          ]
+        },
+        {
+          "id": "r010",
+          "page": 1,
+          "bbox": {
+            "x0": 0.11371,
+            "y0": 0.556442,
+            "x1": 0.879839,
+            "y1": 0.573546
+          },
+          "category": "text",
+          "text": "负债和所有者权益总计：¥21,000,000.00",
+          "candidates": [
+            {
+              "text": "负债和所有者权益总计：¥21,000,000.00",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.95
+            }
+          ]
+        },
+        {
+          "id": "r011",
+          "page": 1,
+          "bbox": {
+            "x0": 0.11371,
+            "y0": 0.618016,
+            "x1": 0.879839,
+            "y1": 0.63512
+          },
+          "category": "text",
+          "text": "营业收入：¥128,000.00",
+          "candidates": [
+            {
+              "text": "营业收入：¥128,000.00",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.95
+            },
+            {
+              "text": "营业收入：¥128,600.00",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.22
+            }
+          ]
+        },
+        {
+          "id": "r012",
+          "page": 1,
+          "bbox": {
+            "x0": 0.11371,
+            "y0": 0.677309,
+            "x1": 0.879839,
+            "y1": 0.694413
+          },
+          "category": "text",
+          "text": "净利润：¥2,460,000.00",
+          "candidates": [
+            {
+              "text": "净利润：¥2,460,000.00",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.95
+            }
+          ]
+        },
+        {
+          "id": "r013",
+          "page": 1,
+          "bbox": {
+            "x0": 0.770161,
+            "y0": 0.874002,
+            "x1": 0.887903,
+            "y1": 0.888826
+          },
+          "category": "text",
+          "text": "单位：人民币元",
+          "candidates": [
+            {
+              "text": "单位：人民币元",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.96
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "name": "编制单位",
+          "value": "杭州明远网络科技有限公司",
+          "region_ids": [
+            "r001"
+          ]
+        },
+        {
+          "name": "报表期间",
+          "value": "2026年10月",
+          "region_ids": [
+            "r002"
+          ]
+        },
+        {
+          "name": "流动资产合计",
+          "value": "12,860,000.00",
+          "region_ids": [
+            "r005"
+          ]
+        },
+        {
+          "name": "非流动资产合计",
+          "value": "8,140,000.00",
+          "region_ids": [
+            "r006"
+          ]
+        },
+        {
+          "name": "资产总计",
+          "value": "21,000,000.00",
+          "region_ids": [
+            "r007"
+          ]
+        },
+        {
+          "name": "负债合计",
+          "value": "6,800,000.00",
+          "region_ids": [
+            "r008"
+          ]
+        },
+        {
+          "name": "所有者权益合计",
+          "value": "14,100,000.00",
+          "region_ids": [
+            "r009"
+          ]
+        },
+        {
+          "name": "负债和所有者权益总计",
+          "value": "21,000,000.00",
+          "region_ids": [
+            "r010"
+          ]
+        },
+        {
+          "name": "营业收入",
+          "value": "128,000.00",
+          "region_ids": [
+            "r011"
+          ]
+        },
+        {
+          "name": "净利润",
+          "value": "2,460,000.00",
+          "region_ids": [
+            "r012"
+          ]
+        }
+      ]
+    },
+    {
+      "doc_id": "purchase-contract-001",
+      "source": "samples/purchase_contract_001.png",
+      "label": "设备采购合同",
+      "schema": "purchase_contract",
+      "description": "合同总价数字转置，比金额加税额多 1000 元；金额一行字号小一号、颜色偏浅，识别把握不足。",
+      "markdown": "# 设备采购合同\n\n合同编号：CG-2026-0917\n\n需方（盖章）：杭州明远网络科技有限公司\n供方（盖章）：南京海川软件股份有限公司\n\n| 项目 | 内容 |\n| --- | --- |\n| 品名 | 智能网关设备 |\n| 数量 | 50 台 |\n| 单价 | ¥2,572.00 |\n| 金额 | ¥128,600.00 |\n| 税率 | 13% |\n| 税额 | ¥16,718.00 |\n| 合同总价 | ¥146,318.00 |\n\n交付方式：合同生效后 30 日内一次性交付至需方指定地点\n签署日期：2026年10月17日",
+      "regions": [
+        {
+          "id": "r000",
+          "page": 1,
+          "bbox": {
+            "x0": 0.36371,
+            "y0": 0.079247,
+            "x1": 0.63629,
+            "y1": 0.106613
+          },
+          "category": "text",
+          "text": "设备采购合同",
+          "candidates": [
+            {
+              "text": "设备采购合同",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.99
+            },
+            {
+              "text": "设备采购合同",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.97
+            }
+          ]
+        },
+        {
+          "id": "r001",
+          "page": 1,
+          "bbox": {
+            "x0": 0.689516,
+            "y0": 0.124287,
+            "x1": 0.887903,
+            "y1": 0.139681
+          },
+          "category": "text",
+          "text": "合同编号：CG-2026-0917",
+          "candidates": [
+            {
+              "text": "合同编号：CG-2026-0917",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.98
+            }
+          ]
+        },
+        {
+          "id": "r002",
+          "page": 1,
+          "bbox": {
+            "x0": 0.102419,
+            "y0": 0.173318,
+            "x1": 0.429032,
+            "y1": 0.188712
+          },
+          "category": "text",
+          "text": "需方（盖章）：杭州明远网络科技有限公司",
+          "candidates": [
+            {
+              "text": "需方（盖章）：杭州明远网络科技有限公司",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.98
+            }
+          ]
+        },
+        {
+          "id": "r003",
+          "page": 1,
+          "bbox": {
+            "x0": 0.529839,
+            "y0": 0.173318,
+            "x1": 0.856452,
+            "y1": 0.188712
+          },
+          "category": "text",
+          "text": "供方（盖章）：南京海川软件股份有限公司",
+          "candidates": [
+            {
+              "text": "供方（盖章）：南京海川软件股份有限公司",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.98
+            }
+          ]
+        },
+        {
+          "id": "r004",
+          "page": 1,
+          "bbox": {
+            "x0": 0.11371,
+            "y0": 0.244014,
+            "x1": 0.150806,
+            "y1": 0.258267
+          },
+          "category": "table",
+          "text": "项目",
+          "candidates": [
+            {
+              "text": "项目",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.97
+            }
+          ]
+        },
+        {
+          "id": "r005",
+          "page": 1,
+          "bbox": {
+            "x0": 0.850806,
+            "y0": 0.243444,
+            "x1": 0.887903,
+            "y1": 0.258837
+          },
+          "category": "table",
+          "text": "内容",
+          "candidates": [
+            {
+              "text": "内容",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.97
+            }
+          ]
+        },
+        {
+          "id": "r006",
+          "page": 1,
+          "bbox": {
+            "x0": 0.11371,
+            "y0": 0.285063,
+            "x1": 0.879839,
+            "y1": 0.300456
+          },
+          "category": "text",
+          "text": "品名：智能网关设备",
+          "candidates": [
+            {
+              "text": "品名：智能网关设备",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.95
+            }
+          ]
+        },
+        {
+          "id": "r007",
+          "page": 1,
+          "bbox": {
+            "x0": 0.11371,
+            "y0": 0.327252,
+            "x1": 0.879839,
+            "y1": 0.342645
+          },
+          "category": "text",
+          "text": "数量：50 台",
+          "candidates": [
+            {
+              "text": "数量：50 台",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.95
+            }
+          ]
+        },
+        {
+          "id": "r008",
+          "page": 1,
+          "bbox": {
+            "x0": 0.11371,
+            "y0": 0.369441,
+            "x1": 0.879839,
+            "y1": 0.385405
+          },
+          "category": "text",
+          "text": "单价：¥2,572.00",
+          "candidates": [
+            {
+              "text": "单价：¥2,572.00",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.95
+            }
+          ]
+        },
+        {
+          "id": "r009",
+          "page": 1,
+          "bbox": {
+            "x0": 0.11371,
+            "y0": 0.41106,
+            "x1": 0.879839,
+            "y1": 0.426454
+          },
+          "category": "text",
+          "text": "金额：¥128,600.00",
+          "candidates": [
+            {
+              "text": "金额：¥128,600.00",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.88
+            },
+            {
+              "text": "金额：¥128,600.00",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.37
+            }
+          ]
+        },
+        {
+          "id": "r010",
+          "page": 1,
+          "bbox": {
+            "x0": 0.11371,
+            "y0": 0.45382,
+            "x1": 0.879839,
+            "y1": 0.469213
+          },
+          "category": "text",
+          "text": "税率：13%",
+          "candidates": [
+            {
+              "text": "税率：13%",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.95
+            }
+          ]
+        },
+        {
+          "id": "r011",
+          "page": 1,
+          "bbox": {
+            "x0": 0.11371,
+            "y0": 0.496009,
+            "x1": 0.879839,
+            "y1": 0.511973
+          },
+          "category": "text",
+          "text": "税额：¥16,718.00",
+          "candidates": [
+            {
+              "text": "税额：¥16,718.00",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.95
+            }
+          ]
+        },
+        {
+          "id": "r012",
+          "page": 1,
+          "bbox": {
+            "x0": 0.11371,
+            "y0": 0.538198,
+            "x1": 0.879839,
+            "y1": 0.555302
+          },
+          "category": "text",
+          "text": "合同总价：¥146,318.00",
+          "candidates": [
+            {
+              "text": "合同总价：¥146,318.00",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.61
+            },
+            {
+              "text": "合同总价：¥145,318.00",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.18
+            },
+            {
+              "text": "合同总价：¥146,318.OO",
+              "origin": "reparse-16x",
+              "verdict": "not_scored",
+              "score": null,
+              "detail": "Jev 评分服务超时，本轮未返回分数"
+            }
+          ]
+        },
+        {
+          "id": "r013",
+          "page": 1,
+          "bbox": {
+            "x0": 0.102419,
+            "y0": 0.598632,
+            "x1": 0.540323,
+            "y1": 0.614025
+          },
+          "category": "text",
+          "text": "交付方式：合同生效后 30 日内一次性交付至需方指定地点",
+          "candidates": [
+            {
+              "text": "交付方式：合同生效后 30 日内一次性交付至需方指定地点",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.96
+            }
+          ]
+        },
+        {
+          "id": "r014",
+          "page": 1,
+          "bbox": {
+            "x0": 0.164516,
+            "y0": 0.686431,
+            "x1": 0.319355,
+            "y1": 0.795895
+          },
+          "category": "seal",
+          "text": "杭州明远网络科技有限公司 合同专用章",
+          "candidates": [
+            {
+              "text": "杭州明远网络科技有限公司 合同专用章",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.93
+            },
+            {
+              "text": "杭州明远网络科技有限公司 合同专用章",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.91
+            }
+          ]
+        },
+        {
+          "id": "r015",
+          "page": 1,
+          "bbox": {
+            "x0": 0.683871,
+            "y0": 0.68187,
+            "x1": 0.851613,
+            "y1": 0.800456
+          },
+          "category": "seal",
+          "text": "南京海川软件股份有限公司 合同专用章",
+          "candidates": [
+            {
+              "text": "南京海川软件股份有限公司 合同专用章",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.92
+            },
+            {
+              "text": "南京海川软件股份有限公司 合同专用章",
+              "origin": "reparse-16x",
+              "verdict": "scored",
+              "score": 0.9
+            }
+          ]
+        },
+        {
+          "id": "r016",
+          "page": 1,
+          "bbox": {
+            "x0": 0.102419,
+            "y0": 0.846066,
+            "x1": 0.317742,
+            "y1": 0.86146
+          },
+          "category": "text",
+          "text": "签署日期：2026年10月17日",
+          "candidates": [
+            {
+              "text": "签署日期：2026年10月17日",
+              "origin": "primary",
+              "verdict": "scored",
+              "score": 0.97
+            }
+          ]
+        }
+      ],
+      "fields": [
+        {
+          "name": "合同编号",
+          "value": "CG-2026-0917",
+          "region_ids": [
+            "r001"
+          ]
+        },
+        {
+          "name": "需方",
+          "value": "杭州明远网络科技有限公司",
+          "region_ids": [
+            "r002"
+          ]
+        },
+        {
+          "name": "供方",
+          "value": "南京海川软件股份有限公司",
+          "region_ids": [
+            "r003"
+          ]
+        },
+        {
+          "name": "品名",
+          "value": "智能网关设备",
+          "region_ids": [
+            "r006"
+          ]
+        },
+        {
+          "name": "数量",
+          "value": "50",
+          "region_ids": [
+            "r007"
+          ]
+        },
+        {
+          "name": "单价",
+          "value": "2,572.00",
+          "region_ids": [
+            "r008"
+          ]
+        },
+        {
+          "name": "金额",
+          "value": "128,600.00",
+          "region_ids": [
+            "r009"
+          ]
+        },
+        {
+          "name": "税率",
+          "value": "13%",
+          "region_ids": [
+            "r010"
+          ]
+        },
+        {
+          "name": "税额",
+          "value": "16,718.00",
+          "region_ids": [
+            "r011"
+          ]
+        },
+        {
+          "name": "合同总价",
+          "value": "146,318.00",
+          "region_ids": [
+            "r012"
+          ]
+        },
+        {
+          "name": "签署日期",
+          "value": "2026年10月17日",
+          "region_ids": [
+            "r016"
+          ]
+        }
+      ]
+    }
+  ]
+}

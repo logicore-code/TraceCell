@@ -1,13 +1,15 @@
 """字段抽取。
 
-账本里的一行一行是从原文里抽出来的业务字段。这里提供两条路：
+账本里的业务字段是从原文里抽出来的。这里提供三条路：
 
-* ``RegexFieldExtractor``：正则抽取。确定性强、零依赖、离线可跑，适合
-  版式稳定的单据（发票、报销单）。字段没抽到就留空，不猜。
+* ``RegexFieldExtractor``：按场景的正则抽。确定性强、零依赖、离线可跑，
+  适合版式稳定的单据（发票、合同、报销单、报表、购销合同）。
+* ``LineItemExtractor``：把表格里的明细行抽成字段。字段名带 ``明细:``
+  前缀，勾稽校验要用。
 * ``KieFieldExtractor``：调 MiniCPM-OCR 1.0 的关键信息抽取能力，按字段名
-  提问，返回 JSON（模型对找不到的字段返回 "###"）。适合版式多变的文档。
+  提问，返回 JSON。适合版式多变的文档。
 
-两条路都遵守同一条规矩：**抽不到就是抽不到**，绝不填占位值。一份台账
+三条路都遵守同一条规矩：**抽不到就是抽不到**，绝不填占位值。一份台账
 里混着编造的字段，比空着更危险。
 """
 
@@ -18,84 +20,28 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
+from .scenarios import SCENARIOS, FieldPattern, Scenario, get_scenario
 from .types import FieldValue, Region
 
-# 常见单据的字段抽取规则。name 是台账里的字段名，pattern 是要在原文里
-# 找的东西，group 是取值用的捕获组编号。
-@dataclass
-class FieldPattern:
-    name: str
-    pattern: str
-    group: int = 1
-    value_group: int = 2
-    """取值组与"整个命中"分开，便于把标签和值分别留在证据里。"""
-
-    flags: int = 0
-
-
-@dataclass
-class FieldSchema:
-    """一个单据类型的字段表。"""
-
-    name: str
-    patterns: list[FieldPattern] = field(default_factory=list)
-
-
-INVOICE_SCHEMA = FieldSchema(
-    name="invoice",
-    patterns=[
-        FieldPattern("发票号码", r"发票号码[:：]?\s*([0-9]{8,20})"),
-        FieldPattern("发票代码", r"发票代码[:：]?\s*([0-9]{10,12})"),
-        FieldPattern("开票日期", r"开票日期[:：]?\s*(\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日)"),
-        FieldPattern("购买方名称", r"购买方名称[:：]?\s*([^\n\r]+)"),
-        FieldPattern("销售方名称", r"销售方名称[:：]?\s*([^\n\r]+)"),
-        FieldPattern("纳税人识别号", r"纳税人识别号[:：]?\s*([0-9A-Z]{15,20})"),
-        FieldPattern("金额", r"(?<!合计)(?<!小写)金额[:：]?\s*[¥￥]?\s*([\d,]+\.\d{2})"),
-        FieldPattern("税额", r"税额[:：]?\s*[¥￥]?\s*([\d,]+\.\d{2})"),
-        FieldPattern("价税合计", r"价税合计[^0-9]*[¥￥]?\s*([\d,]+\.\d{2})"),
-    ],
-)
-
-CONTRACT_SCHEMA = FieldSchema(
-    name="contract",
-    patterns=[
-        FieldPattern("合同编号", r"合同编号[:：]?\s*([A-Za-z0-9\-]+)"),
-        FieldPattern("甲方", r"甲方[（(]?(?:盖章[)）]?)?[:：]?\s*([^\n\r]+)"),
-        FieldPattern("乙方", r"乙方[（(]?(?:盖章[)）]?)?[:：]?\s*([^\n\r]+)"),
-        FieldPattern("合同金额", r"(?:合同|总|价税)?(?:金额|价款|总价)[:：]?\s*[¥￥]?\s*([\d,]+\.\d{2})"),
-        FieldPattern("签署日期", r"签署日期[:：]?\s*(\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日)"),
-        FieldPattern("签署日期", r"签订日期[:：]?\s*(\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日)"),
-        FieldPattern("付款期限", r"付款期限[:：]?\s*([^\n\r]+)"),
-    ],
-)
-
-EXPENSE_SCHEMA = FieldSchema(
-    name="expense",
-    patterns=[
-        FieldPattern("单据号", r"单据(?:编号|号)[:：]?\s*([A-Za-z0-9\-]+)"),
-        FieldPattern("报销人", r"报销人[:：]?\s*([^\n\r]+)"),
-        FieldPattern("部门", r"所属部门[:：]?\s*([^\n\r]+)"),
-        FieldPattern("费用类型", r"费用类型[:：]?\s*([^\n\r]+)"),
-        FieldPattern("金额", r"(?:合计|金额|报销金额)[:：]?\s*[¥￥]?\s*([\d,]+\.\d{2})"),
-        FieldPattern("日期", r"日期[:：]?\s*(\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日)"),
-    ],
-)
-
-SCHEMAS: dict[str, FieldSchema] = {
-    "invoice": INVOICE_SCHEMA,
-    "contract": CONTRACT_SCHEMA,
-    "expense": EXPENSE_SCHEMA,
-}
+__all__ = [
+    "FieldPattern",
+    "LineItemExtractor",
+    "KieFieldExtractor",
+    "RegexFieldExtractor",
+    "SchemaExtractor",
+    "build_extractor",
+    "schema_by_name",
+]
 
 
 class RegexFieldExtractor:
-    """按正则从区域文本里抽字段。"""
+    """按场景的正则从区域文本里抽字段。"""
 
-    def __init__(self, schema: FieldSchema) -> None:
-        self.schema = schema
+    def __init__(self, patterns: list[FieldPattern] | Scenario) -> None:
+        self.patterns = patterns.fields if isinstance(patterns, Scenario) else patterns
         self._compiled = [
             (pattern.name, re.compile(pattern.pattern), pattern.group)
-            for pattern in schema.patterns
+            for pattern in self.patterns
         ]
 
     def extract(self, regions: list[Region]) -> list[FieldValue]:
@@ -111,7 +57,11 @@ class RegexFieldExtractor:
                 match = regex.search(text)
                 if not match:
                     continue
-                value = match.group(group).strip() if group <= (match.lastindex or 0) else match.group(0).strip()
+                value = (
+                    match.group(group).strip()
+                    if group <= (match.lastindex or 0)
+                    else match.group(0).strip()
+                )
                 if not value:
                     continue
                 fields.append(
@@ -119,7 +69,7 @@ class RegexFieldExtractor:
                         name=name,
                         value=value,
                         region_ids=[region.id],
-                        source=f"regex:{self.schema.name}",
+                        source="regex",
                     )
                 )
                 seen.add(name)
@@ -138,11 +88,10 @@ class LineItemExtractor:
     校验才能发现。
     """
 
-    # 行尾是金额，前面是标签
-    PATTERN = re.compile(r"([^\d\s，,；;]{2,20})[\s　:：]*[¥￥]?\s*([\d,]+\.\d{2})\s*$")
-
     # 这些词出现在金额前面时，说明这一行是会计科目或小计，不是明细行
-    ACCOUNTING = ("合计", "总计", "总额", "小计", "价税", "金额", "税额", "单价", "税率", "数量", "价税合计")
+    ACCOUNTING = ("合计", "总计", "总额", "小计", "价税", "金额", "税额", "单价", "税率", "数量")
+
+    PATTERN = re.compile(r"([^\d\s，,；;]{2,20})[\s　:：]*[¥￥]?\s*([\d,]+\.\d{2})\s*$")
 
     def __init__(self, exclude: tuple[str, ...] = ("合计", "总计", "总额", "价税合计")) -> None:
         self.exclude = exclude
@@ -209,6 +158,30 @@ class KieFieldExtractor:
         return result
 
 
+@dataclass
+class SchemaExtractor:
+    """把常规字段抽取和明细行抽取合在一起。
+
+    明细字段单独抽出来，是为了让"明细加起来等不等于合计"这类校验有东西
+    可加。字段名前缀是"明细:"，勾稽规则按前缀匹配。
+    """
+
+    scenario: Scenario
+    with_line_items: bool = True
+
+    def __init__(self, scenario: Scenario, with_line_items: bool = True) -> None:
+        self.scenario = scenario
+        self.with_line_items = with_line_items
+        self.base = RegexFieldExtractor(scenario.fields)
+        self.line_items = LineItemExtractor() if with_line_items else None
+
+    def extract(self, regions: list[Region]) -> list[FieldValue]:
+        fields = list(self.base.extract(regions))
+        if self.line_items is not None:
+            fields.extend(self.line_items.extract(regions))
+        return fields
+
+
 def _parse_json_object(text: str) -> dict[str, Any]:
     """从模型回答里抠出 JSON 对象。
 
@@ -224,7 +197,6 @@ def _parse_json_object(text: str) -> dict[str, Any]:
         return data if isinstance(data, dict) else {}
     except json.JSONDecodeError:
         pass
-    # 再试一次：把中文引号和尾逗号清掉
     cleaned = (
         candidate.replace("“", '"')
         .replace("”", '"')
@@ -238,29 +210,13 @@ def _parse_json_object(text: str) -> dict[str, Any]:
         return {}
 
 
-def schema_by_name(name: str) -> FieldSchema:
-    if name not in SCHEMAS:
-        raise KeyError(f"未知的单据类型：{name}，可选：{', '.join(SCHEMAS)}")
-    return SCHEMAS[name]
+def build_extractor(scenario_name: str) -> SchemaExtractor:
+    """按场景名造抽取器。"""
+
+    return SchemaExtractor(get_scenario(scenario_name))
 
 
-class SchemaExtractor:
-    """把常规字段抽取和明细行抽取合在一起。
+def schema_by_name(name: str) -> Scenario:
+    """兼容旧调用方式：按名字取场景。"""
 
-    明细字段单独抽出来，是为了让"明细加起来等不等于合计"这类校验有东西
-    可加。字段名前缀是"明细:"，勾稽规则按前缀匹配。
-    """
-
-    def __init__(self, schema: FieldSchema, with_line_items: bool = True) -> None:
-        self.base = RegexFieldExtractor(schema)
-        self.line_items = LineItemExtractor() if with_line_items else None
-
-    def extract(self, regions: list[Region]) -> list[FieldValue]:
-        fields = list(self.base.extract(regions))
-        if self.line_items is not None:
-            fields.extend(self.line_items.extract(regions))
-        return fields
-
-
-def build_extractor(schema_name: str) -> SchemaExtractor:
-    return SchemaExtractor(schema_by_name(schema_name))
+    return get_scenario(name)

@@ -54,7 +54,7 @@ def match_region_for_value(value: str, regions: Iterable[Region]) -> Region | No
 
 
 def bind_fields(
-    fields: list[FieldValue], regions: dict[str, Region], policy
+    fields: list[FieldValue], regions: dict[str, Region], policy, scenario=None
 ) -> list[FieldValue]:
     """给字段补上证据区域，并按悲观继承算置信度。"""
 
@@ -64,7 +64,7 @@ def bind_fields(
             region = match_region_for_value(fld.value, ordered)
             if region is not None:
                 fld.region_ids = [region.id]
-        fld.severity = policy.severity_for(fld.name, fld.value)
+        fld.severity = policy.severity_for(fld.name, fld.value, scenario)
         fld.confidence = field_confidence(fld, regions)
         if fld.status is Status.PENDING and fld.confidence >= 0.9 and fld.region_ids:
             fld.status = Status.ACCEPTED
@@ -148,11 +148,12 @@ def build_ledger(
     markdown: str = "",
     pages: int = 1,
     meta: dict[str, Any] | None = None,
+    scenario=None,
 ) -> DocumentLedger:
     """组装一份账本。"""
 
     region_map = {r.id: r for r in regions}
-    bound = bind_fields(fields, region_map, risk_policy)
+    bound = bind_fields(fields, region_map, risk_policy, scenario)
     findings = collect_findings(bound, region_map, budget_policy)
     return DocumentLedger(
         doc_id=doc_id,

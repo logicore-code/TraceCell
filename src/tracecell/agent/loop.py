@@ -23,9 +23,10 @@ from typing import Any, Callable
 
 from ..budget import BudgetPlanner, CellState
 from ..budget import Decision as PlanDecision
-from ..extractors import RegexFieldExtractor, build_extractor, schema_by_name
+from ..extractors import build_extractor
 from ..ledger import build_ledger, collect_findings
-from ..policy import BudgetPolicy, RiskPolicy, sum_rule_for
+from ..policy import BudgetPolicy, RiskPolicy
+from ..scenarios import get_scenario
 from ..providers import layout as layout_mod
 from ..providers.base import (
     PROFILE_ALT,
@@ -85,7 +86,7 @@ class VerificationLoop:
         policy: BudgetPolicy | None = None,
         risk_policy: RiskPolicy | None = None,
         extractor: Callable[[list[Region]], list[FieldValue]] | None = None,
-        schema: str = "invoice",
+        scenario: str = "invoice",
         alt_profile: ParseProfile = PROFILE_ALT,
     ) -> None:
         self.parser = parser
@@ -93,8 +94,9 @@ class VerificationLoop:
         self.escalator = escalator
         self.policy = policy or BudgetPolicy()
         self.risk_policy = risk_policy or RiskPolicy()
-        self.schema = schema
-        self.extractor = extractor or build_extractor(schema)
+        self.scenario = scenario
+        self.scenario_spec = get_scenario(scenario)
+        self.extractor = extractor or build_extractor(scenario)
         self.alt_profile = alt_profile
         self.planner = BudgetPlanner(self.policy)
         self._rounds: dict[str, int] = {}
@@ -118,7 +120,7 @@ class VerificationLoop:
         # 3) 抽字段、定风险
         fields = self._extract(regions)
         for fld in fields:
-            fld.severity = self.risk_policy.severity_for(fld.name, fld.value)
+            fld.severity = self.risk_policy.severity_for(fld.name, fld.value, self.scenario_spec)
 
         # 4) 闭环
         max_iterations = len(regions) * (self.policy.max_rounds + 1) + 8
@@ -182,7 +184,10 @@ class VerificationLoop:
                 "profile": PROFILE_PRIMARY.to_dict(),
                 "alt_profile": self.alt_profile.to_dict(),
                 "models": page.meta.get("models", {}),
+                "scenario": self.scenario,
+                "scenario_label": self.scenario_spec.label,
             },
+            scenario=self.scenario_spec,
         )
 
         # 6) 路由
@@ -196,14 +201,16 @@ class VerificationLoop:
         ledger.budget = self._budget_report(regions, routing)
         ledger.findings = collect_findings(ledger.fields, region_map, self.policy)
 
-        # 8) 单据内部的勾稽校验：明细加起来等于不等于合计
-        rule = sum_rule_for(self.schema)
-        sum_findings = check_sum_consistency(ledger.fields, rule)
-        if sum_findings:
-            ledger.findings.extend(sum_findings)
-            ledger.meta["sum_check"] = {
-                "total": rule.total,
-                "components": rule.components,
+        # 8) 单据内部的勾稽校验
+        rules = self.scenario_spec.rules
+        consistency_findings = check_sum_consistency(ledger.fields, rules)
+        if consistency_findings:
+            ledger.findings.extend(consistency_findings)
+            ledger.meta["consistency_check"] = {
+                "rules": [
+                    {"kind": r.kind, "total": r.total, "components": r.components}
+                    for r in rules
+                ],
                 "status": "mismatch",
             }
 

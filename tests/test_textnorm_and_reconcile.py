@@ -138,45 +138,81 @@ class TestSumConsistency:
         return fields
 
     def test_mismatch_is_reported(self):
-        from tracecell.policy import SumRule
         from tracecell.reconcile import check_sum_consistency
+        from tracecell.scenarios import ConsistencyRule
 
-        rule = SumRule(total="金额", components=["明细"])
+        rule = ConsistencyRule(kind="sum", total="金额", components=["明细"])
         fields = self._fields(
             "2,864.50", [("差旅费", "1,480.00"), ("办公用品", "386.50"), ("业务招待费", "1,098.00")]
         )
-        findings = check_sum_consistency(fields, rule)
+        findings = check_sum_consistency(fields, [rule])
         assert len(findings) == 1
         assert findings[0].kind == "sum_mismatch"
         assert findings[0].severity is Severity.CRITICAL
-        assert "2964.50" in findings[0].message
+        assert "2,964.50" in findings[0].message
         assert "+100.00" in findings[0].message
 
     def test_consistent_totals_pass(self):
-        from tracecell.policy import SumRule
         from tracecell.reconcile import check_sum_consistency
+        from tracecell.scenarios import ConsistencyRule
 
-        rule = SumRule(total="金额", components=["明细"])
+        rule = ConsistencyRule(kind="sum", total="金额", components=["明细"])
         fields = self._fields("1,866.50", [("差旅费", "1,480.00"), ("办公用品", "386.50")])
-        assert check_sum_consistency(fields, rule) == []
+        assert check_sum_consistency(fields, [rule]) == []
 
-    def test_single_component_is_not_checked(self):
-        """只有一个明细时，加总校验没有意义。"""
+    def test_single_line_item_is_still_checked(self):
+        """只有一行明细时，合计仍然应该等于它。"""
 
-        from tracecell.policy import SumRule
         from tracecell.reconcile import check_sum_consistency
+        from tracecell.scenarios import ConsistencyRule
 
-        rule = SumRule(total="金额", components=["明细"])
+        rule = ConsistencyRule(kind="sum", total="金额", components=["明细"])
         fields = self._fields("100.00", [("差旅费", "100.00")])
-        assert check_sum_consistency(fields, rule) == []
+        assert check_sum_consistency(fields, [rule]) == []
+
+        fields = self._fields("99.00", [("差旅费", "100.00")])
+        assert len(check_sum_consistency(fields, [rule])) == 1
+
+    def test_missing_component_is_skipped(self):
+        """分项没抽到就不下结论——可能是抽取失败，不是单据有问题。"""
+
+        from tracecell.reconcile import check_sum_consistency
+        from tracecell.scenarios import ConsistencyRule
+
+        rule = ConsistencyRule(kind="sum", total="价税合计", components=["金额", "税额"])
+        fields = [FieldValue(name="价税合计", value="145,318.00", region_ids=["r0"])]
+        assert check_sum_consistency(fields, [rule]) == []
+
+    def test_product_rule_checks_multiplication(self):
+        """乘法勾稽：金额 = 数量 × 单价。"""
+
+        from tracecell.reconcile import check_sum_consistency
+        from tracecell.scenarios import ConsistencyRule
+
+        rule = ConsistencyRule(kind="product", total="金额", components=["数量", "单价"])
+        good = [
+            FieldValue(name="数量", value="50"),
+            FieldValue(name="单价", value="2,572.00"),
+            FieldValue(name="金额", value="128,600.00"),
+        ]
+        assert check_sum_consistency(good, [rule]) == []
+
+        bad = [
+            FieldValue(name="数量", value="50"),
+            FieldValue(name="单价", value="2,572.00"),
+            FieldValue(name="金额", value="146,318.00"),
+        ]
+        findings = check_sum_consistency(bad, [rule])
+        assert len(findings) == 1
+        assert "17,718.00" in findings[0].message
 
     def test_missing_total_is_skipped(self):
-        from tracecell.policy import SumRule
         from tracecell.reconcile import check_sum_consistency
+        from tracecell.scenarios import ConsistencyRule
 
-        rule = SumRule(total="金额", components=["明细"])
+        rule = ConsistencyRule(kind="sum", total="金额", components=["明细"])
         fields = [FieldValue(name="明细:差旅费", value="100.00")]
-        assert check_sum_consistency(fields, rule) == []
+        assert check_sum_consistency(fields, [rule]) == []
 
 
 class TestLineItemExtraction:
