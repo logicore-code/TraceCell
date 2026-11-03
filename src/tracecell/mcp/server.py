@@ -5,12 +5,12 @@
 
     tracecell mcp --session samples/sessions/demo.json
 
-之所以手写而不是装官方 SDK：MCP 的 stdio 传输本身就是"一行一个 JSON"，
-几百行就够；不引依赖意味着在任何一台装了 Python 的机器上都能起来，
-不用管版本冲突。协议细节遵循 MCP 规范（initialize / tools/list / tools/call）。
+手写没装官方 SDK。MCP 的 stdio 传输本身是一行一个 JSON，几百行就够，
+不引依赖意味着在任何一台装了 Python 的机器上都能起来，省得跟版本冲突
+较劲。协议细节遵循 MCP 规范（initialize / tools/list / tools/call）。
 
-暴露的工具刻意做得很细——不是"一个万能接口"，而是让宿主 Agent 能自己
-决定什么时候解析一份文档、什么时候追问某个区域、什么时候做跨文档对账。
+工具刻意拆得细，让宿主 Agent 自己决定什么时候解析一份文档、什么时候
+追问某个区域、什么时候做跨文档对账。
 """
 
 from __future__ import annotations

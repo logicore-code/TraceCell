@@ -102,7 +102,5 @@ tracecell mcp --session samples/sessions/demo.json
 
 ## 文档
 
-- `docs/method.md` —— 四个机制和公式
-- `docs/calibration.md` —— 阈值怎么标
+- `README.md` —— 各个机制怎么做的，含公式
 - `docs/deployment.md` —— 三种部署形态
-- `docs/mcp.md` —— MCP 接口细节

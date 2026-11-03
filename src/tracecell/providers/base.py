@@ -21,9 +21,8 @@ from ..types import BBox, Candidate, Category, Region, Verdict
 
 # MiniCPM-OCR 1.0 的任务前缀。
 #
-# 这不是提示词工程的产物，而是模型训练时就固定下来的任务指令：换掉前缀
-# 模型会答非所问（实测过，会输出"请提供需要的信息"）。按版面类别选对前缀，
-# 是用好这个模型的前提。
+# 模型训练时就固定下来的任务指令。换成自然语言问句，模型会答非所问
+# （实测过，会输出"请提供需要的信息"）。按版面类别选对前缀是用好它的前提。
 TASK_PROMPTS = {
     "text": "Text Recognition:",
     "table": "Table Recognition:",
@@ -69,8 +68,8 @@ class ScoreResult:
     """一次评分的结果。
 
     `verdict` 必须被认真对待：官方服务在图像解码失败、渲染失败等情况下
-    会返回固定的分数值，那些值不是"模型认为识别错了"，而是"这一步根本
-    没跑成"。TraceCell 在这里就把两种情况分开。
+    会返回固定的分数值，含义是"这一步根本没跑成"，不是"模型认为识别错了"。
+    TraceCell 在这里就把两种情况分开。
     """
 
     score: float | None

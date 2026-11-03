@@ -67,7 +67,7 @@ def field_confidence(field: FieldValue, regions: dict[str, Region]) -> float:
     """字段置信度：从支撑它的区域悲观继承。
 
     没有关联区域时（例如直接从整页文本里正则抓出来的字段），返回 0，
-    交给上层标记为"无证据支撑"，而不是假装自己很可信。
+    交给上层标记为"无证据支撑"。
     """
 
     supporting = [regions[rid] for rid in field.region_ids if rid in regions]

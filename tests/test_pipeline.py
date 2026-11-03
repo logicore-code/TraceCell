@@ -1,8 +1,8 @@
 """核验闭环与账本导出的端到端测试。
 
 这里用一个"假模型"驱动整条链路：解析器返回固定区域，评分器按候选内容
-返回固定分数。目的是验证**策略**——什么时候重解析、什么时候升级、什么
-时候转人工、最后账本长什么样——而不是验证模型。
+返回固定分数。目的是验证策略：什么时候重解析、什么时候升级、什么时候
+转人工、最后账本长什么样。模型本身不测。
 """
 
 from __future__ import annotations
@@ -100,7 +100,7 @@ class TestVerificationLoop:
         assert total.region_ids == ["r000"]
 
     def test_low_score_triggers_additional_work(self):
-        """评分低的区域必须被追查，而不是直接放行。"""
+        """评分低的区域必须被追查，不能直接放行。"""
 
         class LowScorer(FakeScorer):
             def score(self, image, text, category="text"):

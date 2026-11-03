@@ -82,7 +82,9 @@ docker run -d --name minicpm-ocr-jev --gpus all \
 curl http://127.0.0.1:8030/healthz     # {"status":"ok"}
 ```
 
-> **务必检查 `verdict` 字段。** 服务在图像解码失败、渲染失败时会返回固定分数，那是"没跑成"而不是"跑出来说不对"。TraceCell 的客户端会把这两种情况分开处理，见 `providers/jev.py`。
+> `verdict` 字段务必检查。服务在图像解码失败、渲染失败时会返回固定分数，
+> 含义是"没跑成"，不是"跑出来说不对"。TraceCell 的客户端把这两种情况分开
+> 处理，见 `providers/jev.py`。
 
 ### 3. MiniCPM-V 4.7（升级复核）
 
@@ -119,8 +121,6 @@ tracecell serve --provider minicpm --port 8080
 tracecell doctor
 ```
 
----
-
 ## B. 端侧 CPU（llama.cpp）
 
 没有显卡时用 GGUF 量化权重，CPU 也能跑。
@@ -156,9 +156,9 @@ ocr = LlamaCppOcr(
 )
 ```
 
-**视觉压缩档位**直接影响 OCR 质量与速度：`4x` 保留更多视觉 token，适合密集文字与表格；`16x` 更快，适合实时交互。TraceCell 的对抗式核验正是靠"同一块内容用两档参数各读一次"来制造互相独立的候选。
-
----
+视觉压缩档位直接影响 OCR 质量与速度：`4x` 保留更多视觉 token，适合密集文字
+与表格；`16x` 更快，适合实时交互。TraceCell 的对抗式核验靠"同一块内容用两档
+参数各读一次"来制造互相独立的候选。
 
 ## C. 回放模式（无需 GPU）
 
@@ -169,13 +169,11 @@ tracecell demo
 tracecell serve            # http://127.0.0.1:8000
 ```
 
-回放模式跑的是**同一套策略代码**，只是把三个模型的调用换成了录制数据。换成真实模型只需要：
+回放模式跑的是同一套策略代码，把三个模型的调用换成了录制数据。换成真实模型只需要：
 
 ```bash
 tracecell serve --provider minicpm
 ```
-
----
 
 ## 显存预算
 
@@ -189,12 +187,11 @@ tracecell serve --provider minicpm
 
 不够就按这个顺序降级：V 4.7 → 1B 版本 → GGUF 端侧 → 关掉升级复核（转人工）。
 
----
-
 ## 常见问题
 
 **Q：Jev 的分数能不能直接当概率用？**
-不能。AUROC 93.6 是"区分对错的能力"，不是"正确率"。阈值必须在自己业务的数据上标，见 `docs/calibration.md`。
+不能。AUROC 93.6 是"区分对错的能力"，不是"正确率"。阈值必须在自己业务的数据上标，
+`tracecell calibrate` 就是干这个的。
 
 **Q：`verdict` 不是 `scored` 时分数是 0，是不是说明识别错了？**
 不是。那是失败态的固定值，说明这一步根本没跑成。TraceCell 会把它记成"未评分"，不参与置信度计算。

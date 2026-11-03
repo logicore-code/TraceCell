@@ -223,8 +223,7 @@ class Region:
 class FieldValue:
     """账本里的一个业务字段。
 
-    字段的置信度不是模型直接吐出来的，而是从支撑它的区域继承而来，
-    详见 risk.py 的 `field_confidence`。
+    字段置信度从支撑它的区域继承而来，详见 risk.py 的 `field_confidence`。
     """
 
     name: str
@@ -316,8 +315,7 @@ class Decision:
 class BudgetReport:
     """一次核验的成本账单。
 
-    这个报表是 TraceCell 跟"只跑一遍 OCR"最直观的差别：它能说清楚
-    哪些格子额外花了推理、换来了多少风险下降。
+    这个报表能说清楚哪些格子额外花了推理、换来了多少风险下降。
     """
 
     total_cost: float = 0.0

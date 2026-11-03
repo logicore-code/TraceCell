@@ -7,7 +7,8 @@
 这个判定规则不看分数，因此不会循环论证：在争议区域里，得分高的那个候选
 恰恰可能是错的，而真值比对会把它标成错误。
 
-真实业务里这一列要由人来标，方法见 ``docs/calibration.md``。
+真实业务里这一列要由人来标：拿一批真实文档走一遍 TraceCell，把候选和分数
+导出，逐条比对原图确认对错。
 
     python3 scripts/make_labels.py            # 生成 samples/labelled.json
     tracecell calibrate samples/labelled.json  # 标定阈值
