@@ -134,7 +134,7 @@ def cmd_case(args) -> int:
 
     image = _read_bytes(args.image)
     doc_id = args.doc_id or Path(args.image).stem
-    parser, scorer, escalator = _build_components(args, doc_id)
+    parser, scorer, escalator, _scenario = _build_components(args, doc_id)
 
     if args.case == "ocr":
         result = run_ocr_case(parser, image)
