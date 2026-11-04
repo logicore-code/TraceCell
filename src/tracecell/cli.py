@@ -231,6 +231,21 @@ def cmd_batch(args) -> int:
         print("没有找到可处理的文档（支持 png/jpg/webp/pdf）", file=sys.stderr)
         return 1
 
+    # 回放模式下，会话里没有的文档直接跳过。目录里混着别的东西的时候，
+    # 不该因为其中一张图就整批跑不下去。
+    if args.provider == "replay":
+        session = _load_session(args.session)
+        kept = []
+        for path in files:
+            if path.stem in session.doc_ids() or session.find_by_source(path.stem):
+                kept.append(path)
+            else:
+                print(f"  跳过 {path}：回放会话里没有对应的文档", file=sys.stderr)
+        files = kept
+        if not files:
+            print("没有找到会话里有的文档", file=sys.stderr)
+            return 1
+
     def process(path: Path, scenario: str):
         loop = _build_loop(args, path.stem, scenario)
         report = loop.run(str(path), path.stem, str(path))

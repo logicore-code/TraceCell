@@ -152,7 +152,7 @@ The sample sessions read their confidence values back from that recording, so
 the thresholds and the AUROC quoted below sit on top of a real model rather
 than on plausible-looking constants.
 
-`samples/jev_official/` holds the three example cases from the Jev repository
+`references/jev_official/` holds the three example cases from the Jev repository
 (Apache-2.0), each with the reference render and the probability the official
 implementation produced. `scripts/verify_against_official.py` checks this
 setup against them: scoring the official render reproduces the official

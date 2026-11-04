@@ -1,7 +1,7 @@
 """拿官方样例验证这条链路。
 
 Jev 官方仓库里放了三组样例，每组给出：原图块、参考渲染图，以及官方自己跑
-出来的概率（`observed_prob_yes`）。样例文件收在 `samples/jev_official/`，
+出来的概率（`observed_prob_yes`）。样例文件收在 `references/jev_official/`，
 来源：
 
     https://github.com/OpenBMB/MiniCPM-OCR/tree/main/scripts/minicpm-ocr-jev/examples
@@ -40,7 +40,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from tracecell.providers.jev import LlamaCppJevScorer  # noqa: E402
 from tracecell.render import render_text  # noqa: E402
 
-CASES_DIR = ROOT / "samples" / "jev_official"
+CASES_DIR = ROOT / "references" / "jev_official"
 
 # 打分链路这一项的容差。官方样本之间差 0.005 以内。
 CHAIN_TOLERANCE = 0.02
@@ -118,7 +118,7 @@ def main() -> int:
             }
         )
 
-    out = ROOT / "samples" / "jev_official" / "verification.json"
+    out = CASES_DIR / "verification.json"
     out.write_text(
         json.dumps({"cases": rows}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )

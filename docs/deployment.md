@@ -147,7 +147,7 @@ Jev 比的是两张图——原图块，和候选文本渲染出来的图。两�
 python3 scripts/verify_against_official.py
 ```
 
-样例文件收在 `samples/jev_official/`，来自 OpenBMB/MiniCPM-OCR 仓库
+样例文件收在 `references/jev_official/`，来自 OpenBMB/MiniCPM-OCR 仓库
 （Apache-2.0），里面带着官方自己跑出来的概率。
 
 想在纯 CPU 上验证整条链路，用仓库里的录制脚本：

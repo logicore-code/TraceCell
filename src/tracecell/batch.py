@@ -95,6 +95,9 @@ def discover(paths: list[str | Path]) -> list[Path]:
         path = Path(raw)
         if path.is_dir():
             for child in sorted(path.rglob("*")):
+                # 隐藏目录不放进来——.git 里全是图片，扫进去能把批量跑崩
+                if any(part.startswith(".") for part in child.relative_to(path).parts[:-1]):
+                    continue
                 if child.suffix.lower() in DOCUMENT_SUFFIXES:
                     found.append(child)
         elif path.exists():

@@ -226,7 +226,7 @@ m ≥ ln(δ) / ln(1 - p)
 阈值和 AUROC，背后是真的模型。
 
 还有一组是对照：Jev 官方仓库里放了三组样例，每组给出原图块、参考渲染图，
-以及官方自己跑出来的概率。文件收在 `samples/jev_official/`（Apache-2.0），
+以及官方自己跑出来的概率。文件收在 `references/jev_official/`（Apache-2.0），
 `scripts/verify_against_official.py` 拿它们对照本机的打分结果：
 
 ```

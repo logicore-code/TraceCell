@@ -13,7 +13,7 @@
 - **真实 Jev 分数**：`samples/jev_scores.json` 是用官方 GGUF 逐个候选打出来的
   真实分数，录制脚本 `scripts/record_jev.py`（支持断点续跑）。样例会话的置信度
   从这里读回，生成过程依然可复现。
-- **官方样例对照**：`samples/jev_official/` 收录 Jev 官方仓库的三组样例
+- **官方样例对照**：`references/jev_official/` 收录 Jev 官方仓库的三组样例
   （Apache-2.0），`scripts/verify_against_official.py` 用它们验证打分链路。
   用官方自己的参考渲染图打分，本机结果与官方概率差在 0.005 以内。
 - **渲染器**：`src/tracecell/render.py` 按官方 `render_label.py` 的纯文本路径

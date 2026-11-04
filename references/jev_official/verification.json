@@ -4,20 +4,20 @@
       "case_id": "text_putnam_2009",
       "category": "text",
       "official_ocr_output": 0.00702,
-      "local_ocr_output": 0.00228,
-      "chain_delta": 0.00474,
+      "local_ocr_output": 0.00222,
+      "chain_delta": 0.0048,
       "official_ground_truth": 0.99501,
-      "local_ground_truth": 0.95112,
+      "local_ground_truth": 0.95042,
       "ranking_ok": true
     },
     {
       "case_id": "formula_putnam_1999",
       "category": "formula",
       "official_ocr_output": 0.96552,
-      "local_ocr_output": 0.96965,
-      "chain_delta": 0.00413,
+      "local_ocr_output": 0.96981,
+      "chain_delta": 0.00429,
       "official_ground_truth": 0.96813,
-      "local_ground_truth": 0.68481,
+      "local_ground_truth": 0.69687,
       "ranking_ok": true
     },
     {
@@ -27,7 +27,7 @@
       "local_ocr_output": 0.00117,
       "chain_delta": 1e-05,
       "official_ground_truth": 0.04075,
-      "local_ground_truth": 0.01515,
+      "local_ground_truth": 0.01546,
       "ranking_ok": true
     }
   ]
