@@ -556,8 +556,10 @@ def build_invoice() -> tuple[Page, list[dict]]:
         (
             "销售方名称：南京海川软件股份有限公司",
             [
-                candidate("销售方名称：南京海川软件股份有限公司", "primary", 0.46),
-                candidate("销售方名称：南京海川软件股分有限公司", "reparse-16x", 0.22),
+                # OCR 把「股份」自信地读成了「股分」。分数很高，读得很像样，
+                # 但错——抓住它靠的是评分和跨文档对账，不是更长的上下文。
+                candidate("销售方名称：南京海川软件股分有限公司", "primary", 0.91),
+                candidate("销售方名称：南京海川软件股份有限公司", "reparse-16x", 0.46),
                 candidate(
                     "销售方名称：南京海川软件股分有限公同",
                     "reparse-16x",
@@ -1287,6 +1289,21 @@ def strip_pixels(regions: list[dict]) -> list[dict]:
     return [{key: value for key, value in region.items() if key != "_pixels"} for region in regions]
 
 
+def add_digests(session: dict) -> dict:
+    """给每份文档记上源文件的哈希。
+
+    上传一张图进来时按内容匹配已录制的样例，靠的就是这个哈希。
+    """
+
+    import hashlib
+
+    for document in session["documents"]:
+        source = ROOT / document["source"]
+        if source.exists():
+            document["sha256"] = hashlib.sha256(source.read_bytes()).hexdigest()
+    return session
+
+
 def main() -> None:
     SAMPLES_DIR.mkdir(parents=True, exist_ok=True)
     SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
@@ -1345,6 +1362,11 @@ def main() -> None:
             },
         ]
     }
+    for document in session["documents"]:
+        for region in document["regions"]:
+            region.setdefault("truth", region["text"])
+
+    add_digests(session)
     (SESSIONS_DIR / "demo.json").write_text(
         json.dumps(session, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )

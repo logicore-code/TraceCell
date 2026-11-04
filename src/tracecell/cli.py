@@ -64,7 +64,8 @@ def _build_components(args, doc_id: str):
             )
         doc_id = found
     document = session.document(doc_id) or {}
-    scenario = document.get("schema") or args.scenario
+    # 文档自己带的场景优先；显式传了 --scenario 才用用户的
+    scenario = document.get("schema") or getattr(args, "scenario", None) or "invoice"
     parser = ReplayParser(session, doc_id)
     scorer = ReplayScorer(session, doc_id)
     escalator = ReplayEscalator(session, doc_id)
@@ -465,9 +466,9 @@ def build_parser() -> argparse.ArgumentParser:
         )
         sp.add_argument(
             "--scenario",
-            default="invoice",
+            default=None,
             choices=[item["name"] for item in list_scenarios()],
-            help="核验场景，决定抽哪些字段、查哪些勾稽关系",
+            help="核验场景，决定抽哪些字段、查哪些勾稽关系（回放模式按文档自带场景）",
         )
 
     p_parse = sub.add_parser("parse", help="解析并核验一份文档")

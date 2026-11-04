@@ -119,20 +119,20 @@
             {
               "text": "销售方名称：南京海川软件股分有限公司",
               "origin": "primary",
-              "score": 0.91,
-              "verdict": "scored"
+              "verdict": "scored",
+              "score": 0.91
             },
             {
               "text": "销售方名称：南京海川软件股份有限公司",
               "origin": "reparse-16x",
-              "score": 0.46,
-              "verdict": "scored"
+              "verdict": "scored",
+              "score": 0.46
             },
             {
-              "text": "销售方名称：南京海川软件股分有限公司",
+              "text": "销售方名称：南京海川软件股分有限公同",
               "origin": "reparse-16x",
-              "score": null,
               "verdict": "not_scored",
+              "score": null,
               "detail": "Jev 评分服务超时，本轮未返回分数"
             }
           ],

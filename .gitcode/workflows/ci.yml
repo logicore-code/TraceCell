@@ -1,0 +1,48 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: 测试
+    runs-on: [ubuntu-latest, x64, small]
+    steps:
+      - name: Checkout source code
+        uses: checkout
+
+      - name: 装 Python 3.11
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -e ".[web,dev]"
+
+      - name: 跑测试
+        run: pytest -q
+
+      - name: 跑一遍完整链路
+        run: |
+          tracecell scenarios
+          tracecell demo --session samples/sessions
+          tracecell calibrate samples/labelled.json --target-accuracy 0.99
+          tracecell baseline --session samples/sessions
+          tracecell batch samples --session samples/sessions --jobs 4
+
+  lint:
+    name: 代码风格
+    runs-on: [ubuntu-latest, x64, small]
+    steps:
+      - name: Checkout source code
+        uses: checkout
+
+      - name: 装依赖
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install ruff
+
+      - name: 跑 ruff
+        run: ruff check src tests scripts

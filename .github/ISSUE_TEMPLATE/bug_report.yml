@@ -1,0 +1,49 @@
+name: 问题反馈
+description: 发现了不对的地方
+title: "[问题] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        谢谢反馈。下面的信息能帮我更快定位问题。
+  - type: input
+    id: version
+    attributes:
+      label: TraceCell 版本
+      placeholder: v0.1.0
+    validations:
+      required: true
+  - type: input
+    id: models
+    attributes:
+      label: 使用的模型
+      placeholder: MiniCPM-OCR 1.0 / MiniCPM-OCR Jev / MiniCPM-V 4.7
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 怎么复现
+      description: 用的哪份文档、哪个场景、跑的命令
+      placeholder: |
+        tracecell parse samples/invoice_001.png --scenario invoice
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望结果
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际输出
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: tracecell doctor 的输出
+      render: shell

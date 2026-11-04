@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: 测试（Python ${{ matrix.python-version }}）
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: 装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[web,dev]"
+
+      - name: 跑测试
+        run: pytest -q
+
+      - name: 跑一遍完整链路
+        run: |
+          tracecell scenarios
+          tracecell demo --session samples/sessions
+          tracecell calibrate samples/labelled.json --target-accuracy 0.99
+          tracecell baseline --session samples/sessions
+          tracecell batch samples --session samples/sessions --jobs 4
+          tracecell case ocr samples/invoice_001.png --doc-id invoice-001 --session samples/sessions
+          tracecell case jev samples/invoice_001.png --doc-id invoice-001 --session samples/sessions
+          tracecell case vlm samples/invoice_001.png --doc-id invoice-001 --session samples/sessions
+
+      - name: 检查样例数据自洽
+        run: |
+          python scripts/make_samples.py
+          git diff --exit-code samples/ || (echo "样例生成脚本与仓库里的数据不一致" && exit 1)
+
+  lint:
+    name: 代码风格
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ruff
+      - run: ruff check src tests scripts

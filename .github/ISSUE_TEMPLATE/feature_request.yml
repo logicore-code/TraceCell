@@ -1,0 +1,31 @@
+name: 功能建议
+description: 想让它多做点什么
+title: "[建议] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: scenario
+    attributes:
+      label: 想解决的场景
+      description: 哪个单据、哪个环节、现在卡在哪
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 打算怎么做
+      description: 如果有思路，一并写上
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: 属于哪一类
+      options:
+        - 新的单据场景
+        - 新的勾稽关系
+        - 更好的跨文档对账
+        - 部署与性能
+        - 其它
+    validations:
+      required: true

@@ -819,6 +819,78 @@ def strip_pixels(regions: list[dict]) -> list[dict]:
     return [{key: value for key, value in region.items() if key != "_pixels"} for region in regions]
 
 
+def split_into_pdf(page, pages: int = 2):
+    """把一张长图切成多页 PDF，并重新归属区域。
+
+    真实合同本来就是多页的。区域落在哪一页就归到哪一页，坐标也要跟着
+    换算——跨页的文档，区域的页码必须对，坐标也必须是相对那一页的。
+    """
+
+    import io as _io
+
+    from PIL import Image as _Image
+
+    width, height = page.img.size
+    slice_height = height // pages
+    images = []
+    for index in range(pages):
+        top = index * slice_height
+        bottom = height if index == pages - 1 else (index + 1) * slice_height
+        images.append(page.img.crop((0, top, width, bottom)))
+
+    regions = []
+    for region in page.regions:
+        left, top_px, right, bottom_px = region["_pixels"]
+        center = (top_px + bottom_px) / 2
+        page_index = min(int(center // slice_height), pages - 1)
+        offset = page_index * slice_height
+        new_top = max(0.0, (top_px - offset) / slice_height)
+        new_bottom = min(1.0, (bottom_px - offset) / slice_height)
+        if new_bottom <= 0.0 or new_top >= 1.0:
+            continue  # 整块落在别的页上
+        moved = dict(region)
+        moved["page"] = page_index + 1
+        moved["bbox"] = {
+            "x0": round(left / width, 6),
+            "y0": round(new_top, 6),
+            "x1": round(right / width, 6),
+            "y1": round(new_bottom, 6),
+        }
+        regions.append(moved)
+
+    buffer = _io.BytesIO()
+    images[0].save(buffer, format="PDF", save_all=True, append_images=images[1:])
+    return buffer.getvalue(), regions
+
+
+def add_digests(session: dict) -> dict:
+    """给每份文档记上源文件的哈希。
+
+    上传一张图进来时按内容匹配已录制的样例，靠的就是这个哈希。
+    """
+
+    import hashlib
+
+    for document in session["documents"]:
+        source = ROOT / document["source"]
+        if source.exists():
+            document["sha256"] = hashlib.sha256(source.read_bytes()).hexdigest()
+    return session
+
+
+def annotate_truth(regions: list[dict], overrides: dict[str, str] | None = None) -> list[dict]:
+    """给区域补上真值。
+
+    真值默认就是印在纸上的内容；少数地方单据本身印错了（算术对不上的那
+    行、该平没平的报表），真值要单独标出来——不然基线对比会以为 OCR 读错了。
+    """
+
+    overrides = overrides or {}
+    for region in regions:
+        region["truth"] = overrides.get(region["id"], region["text"])
+    return regions
+
+
 def main() -> None:
     SAMPLES_DIR.mkdir(parents=True, exist_ok=True)
     SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
@@ -833,6 +905,16 @@ def main() -> None:
 
     financial.img.save(SAMPLES_DIR / "financial_statement_001.png")
     contract.img.save(SAMPLES_DIR / "purchase_contract_001.png")
+
+    # 真值：默认是印在纸上的内容；这两处单据本身印错了，真值单独标
+    annotate_truth(
+        financial.regions,
+        {"r009": "所有者权益合计：¥14,200,000.00"},
+    )
+    annotate_truth(
+        contract.regions,
+        {"r005": "边缘网关设备　20　1,180.00　23,600.00"},
+    )
 
     session = {
         "documents": [
@@ -864,6 +946,7 @@ def main() -> None:
             },
         ]
     }
+    add_digests(session)
     (SESSIONS_DIR / "extra.json").write_text(
         json.dumps(session, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
@@ -873,6 +956,31 @@ def main() -> None:
         ("purchase_contract_001.png", contract),
     ):
         print(f"{name}: {page.width}x{page.height}")
+    # 合同拆成两页的 PDF：真实合同本来就是多页的
+    pdf_bytes, pdf_regions = split_into_pdf(contract)
+    annotate_truth(
+        pdf_regions,
+        {"r005": "边缘网关设备　20　1,180.00　23,600.00"},
+    )
+    (SAMPLES_DIR / "purchase_contract_001.pdf").write_bytes(pdf_bytes)
+    session["documents"].append(
+        {
+            "doc_id": "purchase-contract-001-pdf",
+            "source": "samples/purchase_contract_001.pdf",
+            "label": "设备采购合同（两页 PDF）",
+            "schema": "purchase_contract",
+            "description": "同一份合同的多页 PDF 形态，区域按页归属",
+            "markdown": CONTRACT_MD,
+            "regions": pdf_regions,
+            "fields": list(contract_fields),
+        }
+    )
+
+    add_digests(session)
+    (SESSIONS_DIR / "extra.json").write_text(
+        json.dumps(session, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+
     for doc in session["documents"]:
         candidates = sum(len(r["candidates"]) for r in doc["regions"])
         print(
