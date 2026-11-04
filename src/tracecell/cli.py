@@ -18,6 +18,7 @@ from pathlib import Path
 
 from . import __version__
 from .audit import AuditLog
+from .baseline import compare as compare_baselines
 from .batch import discover, run_batch, write_summary
 from .degrade import DegradationLog, ResilientEscalator, ResilientParser, ResilientScorer
 from .export import export_bundle, export_csv, export_excel, export_json, export_markdown
@@ -304,6 +305,45 @@ def cmd_fit_gains(args) -> int:
     return 0
 
 
+def cmd_baseline(args) -> int:
+    """三条路线的基线对比：人工要花多少力气，能拦下多少错误。"""
+
+    from .baseline import compare as compare_baselines
+    from .reconcile import check_sum_consistency, reconcile
+    from .scenarios import get_scenario
+
+    session = _load_session(args.session)
+    ledgers = []
+    truths: dict[tuple[str, str], str] = {}
+
+    for doc_id in session.doc_ids():
+        document = session.document(doc_id) or {}
+        scenario = document.get("schema", "invoice")
+        loop = _build_loop(args, doc_id, scenario)
+        report = loop.run(b"", doc_id, document.get("source", ""))
+        ledgers.append(report.ledger)
+        for region in document.get("regions", []):
+            truth = region.get("truth") or region.get("text")
+            if truth:
+                truths[(doc_id, region["id"])] = truth
+
+    # 单据自身的矛盾：内部勾稽 + 跨文档对账
+    document_errors = 0
+    for ledger in ledgers:
+        rules = get_scenario(str(ledger.meta.get("scenario", "invoice"))).rules
+        document_errors += len(check_sum_consistency(ledger.fields, rules))
+    document_errors += len(reconcile(ledgers).mismatches)
+
+    result = compare_baselines(ledgers, truths, document_errors=document_errors)
+    print(result.render())
+    if args.out:
+        Path(args.out).write_text(
+            json.dumps(result.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        print(f"\n已保存：{args.out}", file=sys.stderr)
+    return 0
+
+
 def cmd_scenarios(args) -> int:
     """列出支持的场景及其勾稽关系。"""
 
@@ -471,6 +511,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_fb.add_argument("--out", default=None, help="回灌后的账本输出路径")
     p_fb.add_argument("--labels-out", default=None, help="导出标定样本的路径")
     p_fb.set_defaults(func=cmd_feedback)
+
+    p_base = sub.add_parser("baseline", help="三条路线的基线对比")
+    p_base.add_argument("--out", default=None, help="结果 JSON 输出路径")
+    add_provider_args(p_base)
+    p_base.set_defaults(func=cmd_baseline)
 
     p_fit = sub.add_parser("fit-gains", help="从录制数据回归修复增益系数")
     p_fit.add_argument("sessions", nargs="+", help="会话 JSON 路径")
