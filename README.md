@@ -568,10 +568,10 @@ TraceCell/
 └── deploy/             Docker Compose 与镜像
 ```
 
-## 参赛相关
+## 三个模型各自也能单独用
 
-赛道选进阶挑战。三个模型各自有明确角色且形成闭环，另外每个模型也都能单独
-跑成一个完整案例：
+上面那条流水线把三个模型串在一起。但每个模型单独拿出来也能跑成一个完整
+案例——换个人接手，接的是单个模型，不是整套系统：
 
 ```bash
 tracecell case ocr  票据.png    # 只用 MiniCPM-OCR 1.0：带坐标的票据解析
@@ -579,7 +579,7 @@ tracecell case jev  票据.png    # 只用 MiniCPM-OCR Jev：给 OCR 结果做�
 tracecell case vlm  票据.png    # 只用 MiniCPM-V 4.7：看图问答与视觉定位
 ```
 
-对应"工具集成"方向的落点是 MCP 服务、Skill、OpenAI 兼容接口和可替换的
+接进宿主的方式有四种：MCP 服务、Agent Skill、OpenAI 兼容接口，以及可替换的
 Provider 协议。
 
 ## 已知边界
