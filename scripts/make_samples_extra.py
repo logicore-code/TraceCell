@@ -971,6 +971,7 @@ def main() -> None:
     session["documents"].append(
         {
             "doc_id": "purchase-contract-001-pdf",
+            "variant_of": "purchase-contract-001",
             "source": "samples/purchase_contract_001.pdf",
             "label": "设备采购合同（两页 PDF）",
             "schema": "purchase_contract",

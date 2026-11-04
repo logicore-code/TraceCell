@@ -46,7 +46,7 @@ def _read_bytes(path: str) -> bytes:
     return data
 
 
-def _build_components(args, doc_id: str):
+def _build_components(args, doc_id: str, session: ReplaySession | None = None):
     """按 provider 组装三个模型的客户端，同时确定这份文档的场景。"""
 
     if args.provider == "minicpm":
@@ -55,7 +55,8 @@ def _build_components(args, doc_id: str):
         escalator = OpenAICompatVlm(base_url=args.vlm_url, model=args.vlm_model)
         return parser, scorer, escalator, args.scenario
 
-    session = _load_session(args.session)
+    if session is None:
+        session = _load_session(args.session)
     if doc_id not in session.doc_ids():
         found = session.find_by_source(doc_id)
         if found is None:
@@ -72,8 +73,10 @@ def _build_components(args, doc_id: str):
     return parser, scorer, escalator, scenario
 
 
-def _build_loop(args, doc_id: str, scenario: str | None = None) -> VerificationLoop:
-    parser, scorer, escalator, detected = _build_components(args, doc_id)
+def _build_loop(
+    args, doc_id: str, scenario: str | None = None, session: ReplaySession | None = None
+) -> VerificationLoop:
+    parser, scorer, escalator, detected = _build_components(args, doc_id, session)
     scenario = scenario or detected
     # 三个模型都套上降级包装：任何一个挂了都不至于整份核验崩掉，
     # 具体降级行为写进账本的 degradation 字段。
@@ -101,19 +104,25 @@ def _build_loop(args, doc_id: str, scenario: str | None = None) -> VerificationL
     )
 
 
-def _load_session(path: str) -> ReplaySession:
-    """加载会话。给目录就合并目录下的所有会话文件。"""
+def _load_session(path: str, include_variants: bool = False) -> ReplaySession:
+    """加载会话。给目录就合并目录下的所有会话文件。
+
+    目录里的变体文档（同一份单据的另一种形态）默认不收，统计里不该出现
+    两份一样的单据。要单独跑某一份，用 --doc-id 直接指定。
+    """
 
     target = Path(path)
     if target.is_dir():
-        return ReplaySession.load_dir(target)
+        return ReplaySession.load_dir(target, include_variants=include_variants)
     return ReplaySession.load(target)
 
 
 def cmd_parse(args) -> int:
     image = _read_bytes(args.image)
     doc_id = args.doc_id or Path(args.image).stem
-    loop = _build_loop(args, doc_id, args.scenario)
+    # 单独指定文档时，变体也算数——用户点名要跑的就是这一份
+    session = _load_session(args.session, include_variants=True)
+    loop = _build_loop(args, doc_id, args.scenario, session)
     report = loop.run(image, doc_id, args.image)
     ledger = report.ledger
 
@@ -320,7 +329,7 @@ def cmd_baseline(args) -> int:
     for doc_id in session.doc_ids():
         document = session.document(doc_id) or {}
         scenario = document.get("schema", "invoice")
-        loop = _build_loop(args, doc_id, scenario)
+        loop = _build_loop(args, doc_id, scenario, session)
         report = loop.run(b"", doc_id, document.get("source", ""))
         ledgers.append(report.ledger)
         for region in document.get("regions", []):

@@ -309,7 +309,7 @@ OCR 以 0.91 的高分自信地读成了「股**分**有限公司」。只信 OC
 > `tracecell baseline` 重新跑这张表。样例里每个区域都带 `truth` 字段，
 > 真值默认就是印在纸上的内容，需要修正的地方单独标注。
 
-测试 190 个，不依赖 GPU，模型调用全部用回放数据替换。
+测试 191 个，不依赖 GPU，模型调用全部用回放数据替换。
 
 ## 生产链路
 
@@ -500,7 +500,7 @@ tracecell mcp --session samples/sessions
 ```
 TraceCell/
 ├── src/tracecell/      核心库
-├── tests/              190 个用例
+├── tests/              191 个用例
 ├── samples/            样例单据、录制会话、标注集、真实模型输出
 ├── scripts/            样例生成、标注导出、真实输出录制
 ├── docs/               部署说明与界面截图

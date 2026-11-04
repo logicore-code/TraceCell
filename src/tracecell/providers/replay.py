@@ -57,11 +57,17 @@ class ReplaySession:
         return cls(json.loads(Path(path).read_text(encoding="utf-8")))
 
     @classmethod
-    def load_dir(cls, directory: str | Path) -> "ReplaySession":
+    def load_dir(
+        cls, directory: str | Path, include_variants: bool = False
+    ) -> "ReplaySession":
         """把一个目录下的所有会话文件合并。
 
         样例按场景分文件存放（发票、合同、报销单一份，财务报表和购销合同
         一份），跑完整链路时需要一起加载。
+
+        标了 ``variant_of`` 的文档是同一份单据的另一种形态（比如同一份合同
+        的 PNG 版和两页 PDF 版）。默认不参与汇总，免得统计里出现两份一样的
+        单据；要单独跑可以直接按 doc_id 取。
         """
 
         merged: dict[str, Any] = {"documents": []}
@@ -74,6 +80,8 @@ class ReplaySession:
                 # 只收能回放的会话（带 regions）。同目录下的 real_ocr.json
                 # 记的是模型原始输出，doc_id 会跟会话撞车，不能混进来。
                 if "regions" not in document:
+                    continue
+                if document.get("variant_of") and not include_variants:
                     continue
                 merged["documents"].append(document)
         return cls(merged)
