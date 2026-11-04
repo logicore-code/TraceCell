@@ -37,9 +37,52 @@ from tracecell.recorded import apply_scores, load_scores  # noqa: E402
 
 SAMPLES_DIR = ROOT / "samples"
 SESSIONS_DIR = SAMPLES_DIR / "sessions"
+# 录制分数永远从仓库里那份读，跟输出目录无关
+SOURCE_SAMPLES_DIR = ROOT / "samples"
 
-FONT_REGULAR = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
-FONT_BOLD = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
+
+def set_output_dir(path: str | Path) -> None:
+    """换输出目录。
+
+    CI 里要拿「重新生成的」和「仓库里的」做对比，不能把仓库里的覆盖掉。
+    """
+
+    global SAMPLES_DIR, SESSIONS_DIR
+    SAMPLES_DIR = Path(path)
+    SESSIONS_DIR = SAMPLES_DIR / "sessions"
+
+def _resolve_font(candidates: list[str], what: str) -> str:
+    """在候选路径里找一个能用的字体文件。
+
+    不同机器装的中文字体不一样，写死一个路径换个环境就崩。找不到就报清楚
+    该装什么，别让人对着 "cannot open resource" 猜。
+    """
+
+    for path in candidates:
+        if Path(path).exists():
+            return path
+    raise SystemExit(
+        f"找不到{what}字体。装一下：sudo apt-get install fonts-noto-cjk fonts-arphic-ukai\n"
+        f"试过的路径：{', '.join(candidates)}"
+    )
+
+
+FONT_REGULAR = _resolve_font(
+    [
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc",
+    ],
+    "中文正文字",
+)
+FONT_BOLD = _resolve_font(
+    [
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
+        "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc",
+        "/usr/share/fonts/opentype/noto/NotoSerifCJK-Bold.ttc",
+    ],
+    "中文粗体",
+)
 
 PAPER = (250, 250, 247)
 INK = (26, 28, 34)
@@ -853,6 +896,9 @@ def split_into_pdf(page, pages: int = 2):
         if new_bottom <= 0.0 or new_top >= 1.0:
             continue  # 整块落在别的页上
         moved = dict(region)
+        # 候选要深拷贝。浅拷贝的话候选字典和原区域共用一份，
+        # 后给 PDF 变体填分数会把 PNG 变体的分数一起改掉。
+        moved["candidates"] = [dict(c) for c in region.get("candidates", [])]
         moved["page"] = page_index + 1
         moved["bbox"] = {
             "x0": round(left / width, 6),
@@ -901,6 +947,8 @@ def annotate_truth(regions: list[dict], overrides: dict[str, str] | None = None)
 
 
 def main() -> None:
+    if len(sys.argv) > 2 and sys.argv[1] == "--out":
+        set_output_dir(sys.argv[2])
     SAMPLES_DIR.mkdir(parents=True, exist_ok=True)
     SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -956,7 +1004,7 @@ def main() -> None:
         ]
     }
     # Jev 分数用录制的真实分数，不是手写的
-    recorded = load_scores(SAMPLES_DIR / "jev_scores.json")
+    recorded = load_scores(SOURCE_SAMPLES_DIR / "jev_scores.json")
     applied = 0
     for document in session["documents"]:
         doc_scores = recorded.get(document["doc_id"], {})
@@ -995,7 +1043,7 @@ def main() -> None:
     )
 
     # Jev 分数用录制的真实分数，不是手写的
-    recorded = load_scores(SAMPLES_DIR / "jev_scores.json")
+    recorded = load_scores(SOURCE_SAMPLES_DIR / "jev_scores.json")
     applied = 0
     for document in session["documents"]:
         doc_scores = recorded.get(document["doc_id"], {})

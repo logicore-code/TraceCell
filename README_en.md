@@ -176,7 +176,7 @@ Strategy            Human review    Share    Missed: OCR    Missed: document    
 ------------------------------------------------------------------------------------
 All by hand               83      100.0%             0                 0      0.00 rcu
 Trust the OCR              0        0.0%             3                 8      0.00 rcu
-TraceCell                 15       18.1%             0                 0     54.00 rcu
+TraceCell                 16       19.3%             0                 0     54.00 rcu
 
 83 regions in total: 3 reading errors, 8 document-level contradictions.
 ```
@@ -185,9 +185,9 @@ The second row is the interesting one. "Trust the OCR" misses 8 contradictions
 that OCR read *perfectly*. A better model does not help; only cross-field
 arithmetic does.
 
-The third row is not "check less". It is 83 regions narrowed to 15 by risk,
-where those 15 are the ones with contested readings, failing arithmetic, or
-critical fields. The other 68 are confirmed clean, not unchecked.
+The third row is not "check less". It is 83 regions narrowed to 16 by risk,
+where those 16 are the ones with contested readings, failing arithmetic, or
+critical fields. The other 67 are confirmed clean, not unchecked.
 
 The sample set includes one case that makes the point: an invoice sells the
 company as `南京海川软件**股份**有限公司`, and the OCR reads it confidently

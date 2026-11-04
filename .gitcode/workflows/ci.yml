@@ -32,12 +32,16 @@ jobs:
           tracecell baseline --session samples/sessions
           tracecell batch samples --session samples/sessions --jobs 4
 
+      - name: 装中文字体
+        run: sudo apt-get install -y fonts-noto-cjk fonts-arphic-ukai
+
       - name: 检查样例数据自洽
         run: |
-          python3 scripts/make_samples.py
-          python3 scripts/make_samples_extra.py
-          python3 scripts/make_labels.py
-          git diff --exit-code samples/ || (echo "样例生成脚本与仓库里的数据不一致" && exit 1)
+          # 生成到临时目录，不覆盖仓库里的
+          python3 scripts/make_samples.py --out "$RUNNER_TEMP/regen"
+          python3 scripts/make_samples_extra.py --out "$RUNNER_TEMP/regen"
+          # 字节一致要同版本字体才成立，那是本地的事；CI 查语义一致和内部自洽
+          python3 scripts/check_samples.py --regenerated "$RUNNER_TEMP/regen"
 
   lint:
     name: 代码风格

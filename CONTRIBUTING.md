@@ -34,6 +34,25 @@ pytest -k budget    # 按名字筛
 4. 跑一遍 `pytest` 和 `ruff check`
 5. 提 PR 到 `main`，描述里写清楚"改了什么"和"为什么"
 
+## 改样例数据
+
+样例单据是脚本生成的，不是手工维护的。改了 `scripts/make_samples.py` 或
+`scripts/make_samples_extra.py` 之后：
+
+```bash
+python3 scripts/make_samples.py
+python3 scripts/make_samples_extra.py
+python3 scripts/make_labels.py
+git diff --exit-code samples/
+```
+
+样例图是用中文字体画的，**换一台机器字体版本不一样，画出来的像素就不一样**，
+所以最后那条 `git diff` 只在字体版本相同的机器上成立。CI 里查的是另一层：
+语义一致和内部自洽（`scripts/check_samples.py`），换台机器也该成立。
+
+生成 Jev 分数用 `scripts/record_jev.py`，需要先起 Jev 服务；结果写在
+`samples/jev_scores.json`，生成脚本会把它读回来填进会话。
+
 ## 改模型相关代码前先看
 
 - `providers/jev.py` —— `verdict` 必须检查，这是官方文档反复强调的

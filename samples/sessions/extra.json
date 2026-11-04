@@ -426,7 +426,7 @@
               "text": "设备采购合同",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.997606
+              "score": 0.992739
             }
           ],
           "truth": "设备采购合同"
@@ -447,7 +447,7 @@
               "text": "合同编号：CG-2026-0917",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.998435
+              "score": 0.997523
             }
           ],
           "truth": "合同编号：CG-2026-0917"
@@ -468,7 +468,7 @@
               "text": "需方（盖章）：杭州明远网络科技有限公司",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.998142
+              "score": 0.997797
             }
           ],
           "truth": "需方（盖章）：杭州明远网络科技有限公司"
@@ -489,7 +489,7 @@
               "text": "供方（盖章）：南京海川软件股份有限公司",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.998194
+              "score": 0.998142
             }
           ],
           "truth": "供方（盖章）：南京海川软件股份有限公司"
@@ -510,13 +510,13 @@
               "text": "智能网关设备　50　2,572.00　128,600.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.968024
+              "score": 0.975048
             },
             {
               "text": "智能网关设备　50　2,572.00　128,600.00",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.968024
+              "score": 0.975048
             }
           ],
           "truth": "智能网关设备　50　2,572.00　128,600.00"
@@ -537,7 +537,7 @@
               "text": "边缘网关设备　20　1,180.00　26,600.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.972317
+              "score": 0.983165
             },
             {
               "text": "边缘网关设备　20　1,180.00　23,600.00",
@@ -564,13 +564,13 @@
               "text": "安装配件　100　45.00　4,500.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.950798
+              "score": 0.93246
             },
             {
               "text": "安装配件　100　45.00　4,500.00",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.950798
+              "score": 0.93246
             }
           ],
           "truth": "安装配件　100　45.00　4,500.00"
@@ -591,13 +591,13 @@
               "text": "金额合计：¥156,700.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.971585
+              "score": 0.960477
             },
             {
               "text": "金额合计：¥156,700.00",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.971585
+              "score": 0.960477
             }
           ],
           "truth": "金额合计：¥156,700.00"
@@ -618,13 +618,13 @@
               "text": "税率：13%",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.989746
+              "score": 0.987031
             },
             {
               "text": "税率：13%",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.989746
+              "score": 0.987031
             }
           ],
           "truth": "税率：13%"
@@ -645,13 +645,13 @@
               "text": "合同总价：¥177,071.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.964963
+              "score": 0.958868
             },
             {
               "text": "合同总价：¥177,071.00",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.964963
+              "score": 0.958868
             }
           ],
           "truth": "合同总价：¥177,071.00"
@@ -672,13 +672,13 @@
               "text": "合同总价（大写）：壹拾柒万柒仟零柒拾壹元整",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.987833
+              "score": 0.985519
             },
             {
               "text": "合同总价（大写）：壹拾柒万柒仟零柒拾壹圆整",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.002258
+              "score": 0.00358
             }
           ],
           "truth": "合同总价（大写）：壹拾柒万柒仟零柒拾壹元整"
@@ -699,7 +699,7 @@
               "text": "交付方式：合同生效后 30 日内一次性交付至需方指定地点",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.998833
+              "score": 0.998032
             }
           ],
           "truth": "交付方式：合同生效后 30 日内一次性交付至需方指定地点"
@@ -720,13 +720,13 @@
               "text": "杭州明远网络科技有限公司 合同专用章",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.609804
+              "score": 0.544221
             },
             {
               "text": "杭州明远网络科技有限公司 合同专用章",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.609804
+              "score": 0.544221
             }
           ],
           "truth": "杭州明远网络科技有限公司 合同专用章"
@@ -747,13 +747,13 @@
               "text": "南京海川软件股份有限公司 合同专用章",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.50547
+              "score": 0.28843
             },
             {
               "text": "南京海川软件股份有限公司 合同专用章",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.50547
+              "score": 0.28843
             }
           ],
           "truth": "南京海川软件股份有限公司 合同专用章"
@@ -774,7 +774,7 @@
               "text": "签署日期：2026年10月17日",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.997685
+              "score": 0.997609
             }
           ],
           "truth": "签署日期：2026年10月17日"
