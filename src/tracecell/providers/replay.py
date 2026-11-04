@@ -53,13 +53,13 @@ class ReplaySession:
         }
 
     @classmethod
-    def load(cls, path: str | Path) -> "ReplaySession":
+    def load(cls, path: str | Path) -> ReplaySession:
         return cls(json.loads(Path(path).read_text(encoding="utf-8")))
 
     @classmethod
     def load_dir(
         cls, directory: str | Path, include_variants: bool = False
-    ) -> "ReplaySession":
+    ) -> ReplaySession:
         """把一个目录下的所有会话文件合并。
 
         样例按场景分文件存放（发票、合同、报销单一份，财务报表和购销合同

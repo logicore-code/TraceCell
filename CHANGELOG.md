@@ -3,6 +3,41 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [未发布]
+
+### 新增
+
+- **llama.cpp 端侧 Jev**：`providers/jev.py` 新增 `LlamaCppJevScorer`，直接对
+  llama-server 说话，把官方 SDK 里那层 Python 服务省掉。纯 CPU 就能打分，
+  不需要 Docker 和 NVIDIA。
+- **真实 Jev 分数**：`samples/jev_scores.json` 是用官方 GGUF 逐个候选打出来的
+  真实分数，录制脚本 `scripts/record_jev.py`（支持断点续跑）。样例会话的置信度
+  从这里读回，生成过程依然可复现。
+- **官方样例对照**：`samples/jev_official/` 收录 Jev 官方仓库的三组样例
+  （Apache-2.0），`scripts/verify_against_official.py` 用它们验证打分链路。
+  用官方自己的参考渲染图打分，本机结果与官方概率差在 0.005 以内。
+- **渲染器**：`src/tracecell/render.py` 按官方 `render_label.py` 的纯文本路径
+  实现——字号 18px、行高 2.0、官方字体栈、容器按内容收缩、白边裁 16px、
+  宽高比超 8 收窄换行。浏览器复用，不每次重开 Chromium。
+
+### 修复
+
+- 渲染候选文本时每个候选都新开一个 Chromium，浏览器启动开销比渲染本身还大。
+  复用浏览器后从 2s/张降到 0.01s/张。
+- Playwright 的同步接口不支持多线程共用浏览器，并发录制时会直接把浏览器搞坏。
+- 录制脚本续跑时按文档整体覆盖结果，会把之前录好的区域冲掉。改成按区域合并。
+- PDF 变体文档的区域坐标是相对那一页的，录制时直接拿 PDF 字节裁图，裁出来
+  是空白，出来的分数是废的。改成先渲染页再裁。
+- 样例生成脚本 `make_samples.py` 少了一行 `import sys`，CI 上直接崩。
+
+### 数字
+
+- 样例里的 Jev 分数从手写改成真模型录制。AUROC 从「手写的 1.0000」变成
+  0.9976——前者的完美是构造出来的，后者是量出来的。
+- 标定阈值 0.370 → 0.500，免检率 91.55%（65/71）→ 80.77%（63/78）。
+- 基线：TraceCell 人工复核 20 格（24.1%）→ 15 格（18.1%），核验成本
+  36.80 → 54.00 rcu。渲染器修好之后，Jev 分数不再整体偏低，误判少了很多。
+
 ## [0.1.0] - 2026-11-03
 
 首个完整版本。MiniCPM 火种计划 S2 进阶挑战赛道投稿作品。

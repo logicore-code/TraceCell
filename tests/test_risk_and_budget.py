@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import pytest
+from helpers import make_region
 
 from tracecell.budget import BudgetPlanner, CellState
 from tracecell.policy import BudgetPolicy, RiskPolicy
@@ -16,9 +17,7 @@ from tracecell.risk import (
     field_confidence,
     region_confidence,
 )
-from tracecell.types import BBox, Candidate, Category, FieldValue, Region, Severity, Status, Verdict
-
-from helpers import make_region
+from tracecell.types import Candidate, FieldValue, Severity, Verdict
 
 
 class TestRegionConfidence:

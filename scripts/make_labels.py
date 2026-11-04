@@ -36,18 +36,27 @@ def main() -> int:
     for document in session.get("documents", []):
         doc_id = document.get("doc_id", "?")
         for region in document.get("regions", []):
-            for candidate in region.get("candidates", []):
+            candidates = region.get("candidates", [])
+            # 一个区域里可能有两个同源的候选（比如重解析跑了两次），
+            # note 得能唯一定位到其中一个，不然标定集里会出现重复条目。
+            seen: dict[str, int] = {}
+            for candidate in candidates:
                 score = candidate.get("score")
                 if score is None:
                     continue
+                origin = str(candidate.get("origin", "primary"))
+                seen[origin] = seen.get(origin, 0) + 1
                 truth = normalize(region.get("text", ""))
                 correct = normalize(candidate.get("text", "")) == truth
+                note = f"{doc_id}:{region.get('id')}:{origin}"
+                if sum(1 for c in candidates if c.get("origin") == origin) > 1:
+                    note = f"{note}#{seen[origin]}"
                 samples.append(
                     {
                         "score": round(float(score), 4),
                         "correct": correct,
                         "category": region.get("category", "text"),
-                        "note": f"{doc_id}:{region.get('id')}:{candidate.get('origin')}",
+                        "note": note,
                     }
                 )
 

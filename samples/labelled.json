@@ -1,426 +1,468 @@
 [
   {
-    "score": 0.99,
+    "score": 0.997,
     "correct": true,
     "category": "text",
     "note": "invoice-001:r000:primary"
   },
   {
-    "score": 0.97,
+    "score": 0.997,
     "correct": true,
     "category": "text",
     "note": "invoice-001:r000:reparse-16x"
   },
   {
-    "score": 0.98,
+    "score": 0.9382,
     "correct": true,
     "category": "text",
     "note": "invoice-001:r001:primary"
   },
   {
-    "score": 0.99,
+    "score": 0.9962,
     "correct": true,
     "category": "text",
     "note": "invoice-001:r002:primary"
   },
   {
-    "score": 0.96,
+    "score": 0.9962,
     "correct": true,
     "category": "text",
     "note": "invoice-001:r002:reparse-16x"
   },
   {
-    "score": 0.97,
+    "score": 0.998,
     "correct": true,
     "category": "text",
     "note": "invoice-001:r003:primary"
   },
   {
-    "score": 0.46,
-    "correct": true,
+    "score": 0.0,
+    "correct": false,
     "category": "text",
     "note": "invoice-001:r004:primary"
   },
   {
-    "score": 0.22,
-    "correct": false,
+    "score": 0.998,
+    "correct": true,
     "category": "text",
-    "note": "invoice-001:r004:reparse-16x"
+    "note": "invoice-001:r004:reparse-16x#1"
   },
   {
-    "score": 0.96,
+    "score": 0.0,
+    "correct": false,
+    "category": "text",
+    "note": "invoice-001:r004:reparse-16x#2"
+  },
+  {
+    "score": 0.9265,
     "correct": true,
     "category": "text",
     "note": "invoice-001:r005:primary"
   },
   {
-    "score": 0.97,
+    "score": 0.8065,
     "correct": true,
     "category": "text",
     "note": "invoice-001:r006:primary"
   },
   {
-    "score": 0.94,
+    "score": 0.9981,
     "correct": true,
     "category": "text",
     "note": "invoice-001:r007:primary"
   },
   {
-    "score": 0.93,
+    "score": 0.9969,
     "correct": true,
     "category": "text",
     "note": "invoice-001:r008:primary"
   },
   {
-    "score": 0.96,
+    "score": 0.8979,
     "correct": true,
     "category": "table",
     "note": "invoice-001:r009:primary"
   },
   {
-    "score": 0.95,
+    "score": 0.8907,
     "correct": true,
     "category": "table",
     "note": "invoice-001:r010:primary"
   },
   {
-    "score": 0.95,
+    "score": 0.9787,
     "correct": true,
     "category": "text",
     "note": "invoice-001:r011:primary"
   },
   {
-    "score": 0.93,
+    "score": 0.9787,
     "correct": true,
     "category": "text",
     "note": "invoice-001:r011:reparse-16x"
   },
   {
-    "score": 0.94,
+    "score": 0.9854,
     "correct": true,
     "category": "text",
     "note": "invoice-001:r012:primary"
   },
   {
-    "score": 0.92,
+    "score": 0.9854,
     "correct": true,
     "category": "text",
     "note": "invoice-001:r012:reparse-16x"
   },
   {
-    "score": 0.92,
+    "score": 0.9948,
     "correct": true,
     "category": "text",
     "note": "invoice-001:r013:primary"
   },
   {
-    "score": 0.53,
+    "score": 0.993,
     "correct": true,
     "category": "text",
     "note": "invoice-001:r014:primary"
   },
   {
-    "score": 0.19,
+    "score": 0.0,
     "correct": false,
     "category": "text",
-    "note": "invoice-001:r014:reparse-16x"
+    "note": "invoice-001:r014:reparse-16x#1"
   },
   {
-    "score": 0.96,
+    "score": 0.993,
     "correct": true,
     "category": "text",
     "note": "invoice-001:r014:vlm-review"
   },
   {
-    "score": 0.95,
+    "score": 0.0,
+    "correct": false,
+    "category": "text",
+    "note": "invoice-001:r014:reparse-16x#2"
+  },
+  {
+    "score": 0.9985,
     "correct": true,
     "category": "text",
     "note": "invoice-001:r015:primary"
   },
   {
-    "score": 0.98,
+    "score": 0.2344,
+    "correct": false,
+    "category": "text",
+    "note": "invoice-001:r015:reparse-16x"
+  },
+  {
+    "score": 0.9988,
     "correct": true,
     "category": "text",
     "note": "invoice-001:r016:primary"
   },
   {
-    "score": 0.93,
+    "score": 0.1984,
     "correct": true,
     "category": "seal",
     "note": "invoice-001:r017:primary"
   },
   {
-    "score": 0.91,
+    "score": 0.1984,
     "correct": true,
     "category": "seal",
     "note": "invoice-001:r017:reparse-16x"
   },
   {
-    "score": 0.99,
+    "score": 0.9979,
     "correct": true,
     "category": "text",
     "note": "contract-001:r000:primary"
   },
   {
-    "score": 0.96,
+    "score": 0.9979,
     "correct": true,
     "category": "text",
     "note": "contract-001:r000:reparse-16x"
   },
   {
-    "score": 0.98,
+    "score": 0.9918,
     "correct": true,
     "category": "text",
     "note": "contract-001:r001:primary"
   },
   {
-    "score": 0.97,
+    "score": 0.9984,
     "correct": true,
     "category": "text",
     "note": "contract-001:r002:primary"
   },
   {
-    "score": 0.96,
+    "score": 0.9985,
     "correct": true,
     "category": "text",
     "note": "contract-001:r003:primary"
   },
   {
-    "score": 0.97,
+    "score": 0.9841,
     "correct": true,
     "category": "text",
     "note": "contract-001:r004:primary"
   },
   {
-    "score": 0.93,
+    "score": 0.5037,
     "correct": true,
     "category": "text",
     "note": "contract-001:r005:primary"
   },
   {
-    "score": 0.96,
+    "score": 0.9974,
     "correct": true,
     "category": "text",
     "note": "contract-001:r006:primary"
   },
   {
-    "score": 0.92,
+    "score": 0.5314,
     "correct": true,
     "category": "text",
     "note": "contract-001:r007:primary"
   },
   {
-    "score": 0.98,
+    "score": 0.9848,
     "correct": true,
     "category": "text",
     "note": "contract-001:r008:primary"
   },
   {
-    "score": 0.24,
+    "score": 0.0001,
     "correct": false,
     "category": "text",
     "note": "contract-001:r009:primary"
   },
   {
-    "score": 0.41,
+    "score": 0.993,
     "correct": true,
     "category": "text",
-    "note": "contract-001:r009:reparse-16x"
+    "note": "contract-001:r009:reparse-16x#1"
   },
   {
-    "score": 0.38,
+    "score": 0.0001,
+    "correct": false,
+    "category": "text",
+    "note": "contract-001:r009:reparse-16x#2"
+  },
+  {
+    "score": 0.9791,
     "correct": true,
     "category": "text",
     "note": "contract-001:r010:primary"
   },
   {
-    "score": 0.19,
+    "score": 0.0,
     "correct": false,
     "category": "text",
-    "note": "contract-001:r010:reparse-16x"
+    "note": "contract-001:r010:reparse-16x#1"
   },
   {
-    "score": 0.96,
+    "score": 0.0,
+    "correct": false,
+    "category": "text",
+    "note": "contract-001:r010:reparse-16x#2"
+  },
+  {
+    "score": 0.9973,
     "correct": true,
     "category": "text",
     "note": "contract-001:r011:primary"
   },
   {
-    "score": 0.93,
+    "score": 0.9447,
     "correct": true,
     "category": "text",
     "note": "contract-001:r012:primary"
   },
   {
-    "score": 0.95,
+    "score": 0.9982,
     "correct": true,
     "category": "text",
     "note": "contract-001:r013:primary"
   },
   {
-    "score": 0.95,
+    "score": 0.998,
     "correct": true,
     "category": "text",
     "note": "contract-001:r014:primary"
   },
   {
-    "score": 0.97,
+    "score": 0.9979,
     "correct": true,
     "category": "text",
     "note": "contract-001:r015:primary"
   },
   {
-    "score": 0.97,
+    "score": 0.9979,
     "correct": true,
     "category": "text",
     "note": "contract-001:r016:primary"
   },
   {
-    "score": 0.93,
+    "score": 0.5765,
     "correct": true,
     "category": "seal",
     "note": "contract-001:r017:primary"
   },
   {
-    "score": 0.92,
+    "score": 0.5765,
     "correct": true,
     "category": "seal",
     "note": "contract-001:r017:reparse-16x"
   },
   {
-    "score": 0.92,
+    "score": 0.5073,
     "correct": true,
     "category": "seal",
     "note": "contract-001:r018:primary"
   },
   {
-    "score": 0.9,
+    "score": 0.5073,
     "correct": true,
     "category": "seal",
     "note": "contract-001:r018:reparse-16x"
   },
   {
-    "score": 0.98,
+    "score": 0.9984,
     "correct": true,
     "category": "text",
     "note": "expense-001:r000:primary"
   },
   {
-    "score": 0.95,
+    "score": 0.9984,
     "correct": true,
     "category": "text",
     "note": "expense-001:r000:reparse-16x"
   },
   {
-    "score": 0.97,
+    "score": 0.9987,
     "correct": true,
     "category": "text",
     "note": "expense-001:r001:primary"
   },
   {
-    "score": 0.95,
+    "score": 0.9983,
     "correct": true,
     "category": "text",
     "note": "expense-001:r002:primary"
   },
   {
-    "score": 0.52,
+    "score": 0.9841,
     "correct": true,
     "category": "text",
     "note": "expense-001:r003:primary"
   },
   {
-    "score": 0.27,
+    "score": 0.1425,
     "correct": false,
     "category": "text",
-    "note": "expense-001:r003:reparse-16x"
+    "note": "expense-001:r003:reparse-16x#1"
   },
   {
-    "score": 0.98,
+    "score": 0.0004,
+    "correct": false,
+    "category": "text",
+    "note": "expense-001:r003:reparse-16x#2"
+  },
+  {
+    "score": 0.9987,
     "correct": true,
     "category": "text",
     "note": "expense-001:r004:primary"
   },
   {
-    "score": 0.93,
+    "score": 0.9988,
     "correct": true,
     "category": "text",
     "note": "expense-001:r005:primary"
   },
   {
-    "score": 0.94,
+    "score": 0.9969,
     "correct": true,
     "category": "table",
     "note": "expense-001:r006:primary"
   },
   {
-    "score": 0.94,
+    "score": 0.9407,
     "correct": true,
     "category": "table",
     "note": "expense-001:r007:primary"
   },
   {
-    "score": 0.92,
+    "score": 0.9879,
     "correct": true,
     "category": "table",
     "note": "expense-001:r008:primary"
   },
   {
-    "score": 0.91,
+    "score": 0.986,
     "correct": true,
     "category": "table",
     "note": "expense-001:r009:primary"
   },
   {
-    "score": 0.9,
+    "score": 0.9886,
     "correct": true,
     "category": "table",
     "note": "expense-001:r010:primary"
   },
   {
-    "score": 0.37,
+    "score": 0.9853,
     "correct": true,
     "category": "text",
     "note": "expense-001:r011:primary"
   },
   {
-    "score": 0.19,
+    "score": 0.0,
     "correct": false,
     "category": "text",
-    "note": "expense-001:r011:reparse-16x"
+    "note": "expense-001:r011:reparse-16x#1"
   },
   {
-    "score": 0.94,
+    "score": 0.0,
+    "correct": false,
+    "category": "text",
+    "note": "expense-001:r011:reparse-16x#2"
+  },
+  {
+    "score": 0.9722,
     "correct": true,
     "category": "text",
     "note": "expense-001:r012:primary"
   },
   {
-    "score": 0.92,
+    "score": 0.9722,
     "correct": true,
     "category": "text",
     "note": "expense-001:r012:reparse-16x"
   },
   {
-    "score": 0.92,
+    "score": 0.9824,
     "correct": true,
     "category": "text",
     "note": "expense-001:r013:primary"
   },
   {
-    "score": 0.93,
+    "score": 0.8637,
     "correct": true,
     "category": "seal",
     "note": "expense-001:r014:primary"
   },
   {
-    "score": 0.92,
+    "score": 0.9219,
     "correct": true,
     "category": "figure",
     "note": "expense-001:r015:primary"
   },
   {
-    "score": 0.92,
+    "score": 0.9836,
     "correct": true,
     "category": "text",
     "note": "expense-001:r016:primary"

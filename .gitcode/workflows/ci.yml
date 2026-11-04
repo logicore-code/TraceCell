@@ -32,6 +32,13 @@ jobs:
           tracecell baseline --session samples/sessions
           tracecell batch samples --session samples/sessions --jobs 4
 
+      - name: 检查样例数据自洽
+        run: |
+          python3 scripts/make_samples.py
+          python3 scripts/make_samples_extra.py
+          python3 scripts/make_labels.py
+          git diff --exit-code samples/ || (echo "样例生成脚本与仓库里的数据不一致" && exit 1)
+
   lint:
     name: 代码风格
     runs-on: [ubuntu-latest, x64, small]

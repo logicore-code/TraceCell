@@ -127,7 +127,7 @@ class RiskPolicy:
         return SEVERITY_WEIGHT[severity.value]
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "RiskPolicy":
+    def from_dict(cls, data: dict[str, Any]) -> RiskPolicy:
         rules = tuple(
             FieldRule(
                 pattern=r["pattern"],
@@ -144,7 +144,7 @@ class RiskPolicy:
         )
 
     @classmethod
-    def load(cls, path: str | Path) -> "RiskPolicy":
+    def load(cls, path: str | Path) -> RiskPolicy:
         return cls.from_dict(json.loads(Path(path).read_text(encoding="utf-8")))
 
 
@@ -210,7 +210,7 @@ class CostModel:
         }.get(action, 0.0)
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "CostModel":
+    def from_dict(cls, data: dict[str, Any]) -> CostModel:
         return cls(**{k: float(v) for k, v in data.items() if k in cls.__annotations__})
 
 
@@ -262,8 +262,8 @@ class BudgetPolicy:
         cls,
         samples_path: str | Path,
         target_accuracy: float = 0.99,
-        base: "BudgetPolicy | None" = None,
-    ) -> "BudgetPolicy":
+        base: BudgetPolicy | None = None,
+    ) -> BudgetPolicy:
         """用标注样本标定出来的阈值覆盖放行阈值。
 
         默认的 0.90 是个起点，不是结论。拿自己的数据标一次之后，放行
@@ -314,7 +314,7 @@ class BudgetPolicy:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "BudgetPolicy":
+    def from_dict(cls, data: dict[str, Any]) -> BudgetPolicy:
         data = dict(data)
         cost = data.pop("cost_model", None)
         policy = cls(

@@ -18,7 +18,6 @@ from typing import Any, Protocol, runtime_checkable
 
 from ..types import BBox, Candidate, Category, Region, Verdict
 
-
 # MiniCPM-OCR 1.0 的任务前缀。
 #
 # 模型训练时就固定下来的任务指令。换成自然语言问句，模型会答非所问

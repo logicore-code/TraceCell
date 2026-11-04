@@ -57,7 +57,7 @@ def is_pdf(data: bytes) -> bool:
 
 
 def is_image(data: bytes) -> bool:
-    return data[:4] == b"%PDF-" is False and data.startswith(_IMAGE_MAGIC)
+    return data[:4] == b"%PDF-" == False and data.startswith(_IMAGE_MAGIC)
 
 
 def load_image(data: bytes) -> tuple[bytes, int, int]:

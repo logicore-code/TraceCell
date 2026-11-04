@@ -24,6 +24,7 @@ from __future__ import annotations
 import json
 import math
 import random
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -33,6 +34,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 sys.path.insert(0, str(ROOT / "src"))
 from tracecell.recorded import apply_scores, load_scores  # noqa: E402
+
 SAMPLES_DIR = ROOT / "samples"
 SESSIONS_DIR = SAMPLES_DIR / "sessions"
 
@@ -142,7 +144,7 @@ class Page:
         total = sum(widths) + spacing * (len(content) - 1)
         cursor = center_x - total / 2
         boxes = []
-        for ch, width in zip(content, widths):
+        for ch, width in zip(content, widths, strict=True):
             self.draw.text((cursor, y), ch, font=font_obj, fill=fill, anchor="la")
             boxes.append(self.draw.textbbox((cursor, y), ch, font=font_obj, anchor="la"))
             cursor += width + spacing
@@ -647,7 +649,7 @@ def build_purchase_contract() -> tuple[Page, list[dict]]:
     ]
     row_regions = []
     y = 512
-    for name, qty, price, amount, clean, note in item_rows:
+    for name, qty, price, amount, clean, _note in item_rows:
         fill = INK if clean else INK_FAINT
         candidates = None
         if clean:
@@ -747,7 +749,7 @@ def build_purchase_contract() -> tuple[Page, list[dict]]:
 
     # 交付方式
     y += 82
-    r_delivery = page.text(
+    page.text(
         (left, y),
         "交付方式：合同生效后 30 日内一次性交付至需方指定地点",
         reg(21),
@@ -831,7 +833,6 @@ def split_into_pdf(page, pages: int = 2):
 
     import io as _io
 
-    from PIL import Image as _Image
 
     width, height = page.img.size
     slice_height = height // pages

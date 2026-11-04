@@ -24,13 +24,13 @@
               "text": "资产负债表",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.99
+              "score": 0.996723
             },
             {
               "text": "资产负债表",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.97
+              "score": 0.996723
             }
           ],
           "truth": "资产负债表"
@@ -51,7 +51,7 @@
               "text": "编制单位：杭州明远网络科技有限公司",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.98
+              "score": 0.998551
             }
           ],
           "truth": "编制单位：杭州明远网络科技有限公司"
@@ -72,7 +72,7 @@
               "text": "报表期间：2026年10月",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.98
+              "score": 0.998897
             }
           ],
           "truth": "报表期间：2026年10月"
@@ -93,7 +93,7 @@
               "text": "项目",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.97
+              "score": 0.990579
             }
           ],
           "truth": "项目"
@@ -114,7 +114,7 @@
               "text": "期末余额",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.97
+              "score": 0.997295
             }
           ],
           "truth": "期末余额"
@@ -135,7 +135,7 @@
               "text": "流动资产合计：¥12,860,000.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.95
+              "score": 0.959201
             }
           ],
           "truth": "流动资产合计：¥12,860,000.00"
@@ -156,7 +156,7 @@
               "text": "非流动资产合计：¥8,140,000.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.95
+              "score": 0.945339
             }
           ],
           "truth": "非流动资产合计：¥8,140,000.00"
@@ -177,7 +177,7 @@
               "text": "资产总计：¥21,000,000.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.95
+              "score": 0.926391
             }
           ],
           "truth": "资产总计：¥21,000,000.00"
@@ -198,7 +198,7 @@
               "text": "负债合计：¥6,800,000.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.95
+              "score": 0.949085
             }
           ],
           "truth": "负债合计：¥6,800,000.00"
@@ -219,19 +219,19 @@
               "text": "所有者权益合计：¥14,100,000.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.93
+              "score": 0.966221
             },
             {
               "text": "所有者权益合计：¥14,100,900.00",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.41
+              "score": 0.0
             },
             {
               "text": "所有者权益合计：¥14,100,000.00",
               "origin": "vlm-review",
               "verdict": "scored",
-              "score": 0.95,
+              "score": 0.966221,
               "detail": "多模态复核确认印字，浅色小字但读数无误"
             }
           ],
@@ -253,7 +253,7 @@
               "text": "负债和所有者权益总计：¥21,000,000.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.95
+              "score": 0.963614
             }
           ],
           "truth": "负债和所有者权益总计：¥21,000,000.00"
@@ -274,13 +274,13 @@
               "text": "营业收入：¥128,000.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.95
+              "score": 0.936433
             },
             {
               "text": "营业收入：¥128,600.00",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.22
+              "score": 0.0
             }
           ],
           "truth": "营业收入：¥128,000.00"
@@ -301,7 +301,7 @@
               "text": "净利润：¥2,460,000.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.95
+              "score": 0.935103
             }
           ],
           "truth": "净利润：¥2,460,000.00"
@@ -322,7 +322,7 @@
               "text": "单位：人民币元",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.96
+              "score": 0.994268
             }
           ],
           "truth": "单位：人民币元"
@@ -426,7 +426,7 @@
               "text": "设备采购合同",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.98
+              "score": 0.997606
             }
           ],
           "truth": "设备采购合同"
@@ -447,7 +447,7 @@
               "text": "合同编号：CG-2026-0917",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.97
+              "score": 0.998435
             }
           ],
           "truth": "合同编号：CG-2026-0917"
@@ -468,7 +468,7 @@
               "text": "需方（盖章）：杭州明远网络科技有限公司",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.96
+              "score": 0.998142
             }
           ],
           "truth": "需方（盖章）：杭州明远网络科技有限公司"
@@ -489,7 +489,7 @@
               "text": "供方（盖章）：南京海川软件股份有限公司",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.96
+              "score": 0.998194
             }
           ],
           "truth": "供方（盖章）：南京海川软件股份有限公司"
@@ -510,13 +510,13 @@
               "text": "智能网关设备　50　2,572.00　128,600.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.93
+              "score": 0.968024
             },
             {
               "text": "智能网关设备　50　2,572.00　128,600.00",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.86
+              "score": 0.968024
             }
           ],
           "truth": "智能网关设备　50　2,572.00　128,600.00"
@@ -537,13 +537,13 @@
               "text": "边缘网关设备　20　1,180.00　26,600.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.83
+              "score": 0.972317
             },
             {
               "text": "边缘网关设备　20　1,180.00　23,600.00",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.44
+              "score": 0.0
             }
           ],
           "truth": "边缘网关设备　20　1,180.00　23,600.00"
@@ -564,13 +564,13 @@
               "text": "安装配件　100　45.00　4,500.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.93
+              "score": 0.950798
             },
             {
               "text": "安装配件　100　45.00　4,500.00",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.86
+              "score": 0.950798
             }
           ],
           "truth": "安装配件　100　45.00　4,500.00"
@@ -591,13 +591,13 @@
               "text": "金额合计：¥156,700.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.95
+              "score": 0.971585
             },
             {
               "text": "金额合计：¥156,700.00",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.91
+              "score": 0.971585
             }
           ],
           "truth": "金额合计：¥156,700.00"
@@ -618,13 +618,13 @@
               "text": "税率：13%",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.96
+              "score": 0.989746
             },
             {
               "text": "税率：13%",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.94
+              "score": 0.989746
             }
           ],
           "truth": "税率：13%"
@@ -645,13 +645,13 @@
               "text": "合同总价：¥177,071.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.94
+              "score": 0.964963
             },
             {
               "text": "合同总价：¥177,071.00",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.9
+              "score": 0.964963
             }
           ],
           "truth": "合同总价：¥177,071.00"
@@ -672,13 +672,13 @@
               "text": "合同总价（大写）：壹拾柒万柒仟零柒拾壹元整",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.91
+              "score": 0.987833
             },
             {
               "text": "合同总价（大写）：壹拾柒万柒仟零柒拾壹圆整",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.44
+              "score": 0.002258
             }
           ],
           "truth": "合同总价（大写）：壹拾柒万柒仟零柒拾壹元整"
@@ -699,7 +699,7 @@
               "text": "交付方式：合同生效后 30 日内一次性交付至需方指定地点",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.96
+              "score": 0.998833
             }
           ],
           "truth": "交付方式：合同生效后 30 日内一次性交付至需方指定地点"
@@ -720,13 +720,13 @@
               "text": "杭州明远网络科技有限公司 合同专用章",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.93
+              "score": 0.609804
             },
             {
               "text": "杭州明远网络科技有限公司 合同专用章",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.91
+              "score": 0.609804
             }
           ],
           "truth": "杭州明远网络科技有限公司 合同专用章"
@@ -747,13 +747,13 @@
               "text": "南京海川软件股份有限公司 合同专用章",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.92
+              "score": 0.50547
             },
             {
               "text": "南京海川软件股份有限公司 合同专用章",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.9
+              "score": 0.50547
             }
           ],
           "truth": "南京海川软件股份有限公司 合同专用章"
@@ -774,7 +774,7 @@
               "text": "签署日期：2026年10月17日",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.97
+              "score": 0.997685
             }
           ],
           "truth": "签署日期：2026年10月17日"
@@ -865,7 +865,7 @@
               "text": "设备采购合同",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.98
+              "score": 0.997606
             }
           ],
           "_pixels": [
@@ -892,7 +892,7 @@
               "text": "合同编号：CG-2026-0917",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.97
+              "score": 0.998435
             }
           ],
           "_pixels": [
@@ -919,7 +919,7 @@
               "text": "需方（盖章）：杭州明远网络科技有限公司",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.96
+              "score": 0.998142
             }
           ],
           "_pixels": [
@@ -946,7 +946,7 @@
               "text": "供方（盖章）：南京海川软件股份有限公司",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.96
+              "score": 0.998194
             }
           ],
           "_pixels": [
@@ -973,13 +973,13 @@
               "text": "智能网关设备　50　2,572.00　128,600.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.93
+              "score": 0.968024
             },
             {
               "text": "智能网关设备　50　2,572.00　128,600.00",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.86
+              "score": 0.968024
             }
           ],
           "_pixels": [
@@ -1006,13 +1006,13 @@
               "text": "边缘网关设备　20　1,180.00　26,600.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.83
+              "score": 0.972317
             },
             {
               "text": "边缘网关设备　20　1,180.00　23,600.00",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.44
+              "score": 0.0
             }
           ],
           "_pixels": [
@@ -1039,13 +1039,13 @@
               "text": "安装配件　100　45.00　4,500.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.93
+              "score": 0.950798
             },
             {
               "text": "安装配件　100　45.00　4,500.00",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.86
+              "score": 0.950798
             }
           ],
           "_pixels": [
@@ -1072,13 +1072,13 @@
               "text": "金额合计：¥156,700.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.95
+              "score": 0.971585
             },
             {
               "text": "金额合计：¥156,700.00",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.91
+              "score": 0.971585
             }
           ],
           "_pixels": [
@@ -1105,13 +1105,13 @@
               "text": "税率：13%",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.96
+              "score": 0.989746
             },
             {
               "text": "税率：13%",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.94
+              "score": 0.989746
             }
           ],
           "_pixels": [
@@ -1138,13 +1138,13 @@
               "text": "合同总价：¥177,071.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.94
+              "score": 0.964963
             },
             {
               "text": "合同总价：¥177,071.00",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.9
+              "score": 0.964963
             }
           ],
           "_pixels": [
@@ -1171,13 +1171,13 @@
               "text": "合同总价（大写）：壹拾柒万柒仟零柒拾壹元整",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.91
+              "score": 0.987833
             },
             {
               "text": "合同总价（大写）：壹拾柒万柒仟零柒拾壹圆整",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.44
+              "score": 0.002258
             }
           ],
           "_pixels": [
@@ -1204,7 +1204,7 @@
               "text": "交付方式：合同生效后 30 日内一次性交付至需方指定地点",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.96
+              "score": 0.998833
             }
           ],
           "_pixels": [
@@ -1231,13 +1231,13 @@
               "text": "杭州明远网络科技有限公司 合同专用章",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.93
+              "score": 0.609804
             },
             {
               "text": "杭州明远网络科技有限公司 合同专用章",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.91
+              "score": 0.609804
             }
           ],
           "_pixels": [
@@ -1264,13 +1264,13 @@
               "text": "南京海川软件股份有限公司 合同专用章",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.92
+              "score": 0.50547
             },
             {
               "text": "南京海川软件股份有限公司 合同专用章",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.9
+              "score": 0.50547
             }
           ],
           "_pixels": [
@@ -1297,7 +1297,7 @@
               "text": "签署日期：2026年10月17日",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.97
+              "score": 0.997685
             }
           ],
           "_pixels": [

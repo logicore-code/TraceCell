@@ -15,8 +15,8 @@ from .base import (  # noqa: F401
     PageParse,
     ParseProfile,
     Parser,
-    ScoreResult,
     Scorer,
+    ScoreResult,
 )
 
 __all__ = [

@@ -5,13 +5,14 @@ from __future__ import annotations
 import math
 
 import pytest
+from helpers import make_region
 
 from tracecell.calibration import (
     CalibrationSample,
+    apply_isotonic,
     auroc,
     calibrate,
     isotonic_regression,
-    apply_isotonic,
     recommend_threshold,
     threshold_curve,
 )
@@ -23,8 +24,6 @@ from tracecell.routing import (
     route_document,
 )
 from tracecell.types import FieldValue, Severity, Status
-
-from helpers import make_region
 
 
 class TestAuroc:
@@ -101,7 +100,7 @@ class TestThresholdCalibration:
 
         curve = threshold_curve(self._samples())
         rates = [point["accept_rate"] for point in curve]
-        assert all(a >= b - 1e-9 for a, b in zip(rates, rates[1:]))
+        assert all(a >= b - 1e-9 for a, b in zip(rates, rates[1:], strict=False))
 
     def test_cost_aware_recommendation(self):
         """人工贵的时候阈值应该放宽，人工便宜的时候应该收紧。"""

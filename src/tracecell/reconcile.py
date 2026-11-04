@@ -15,11 +15,11 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 from typing import Any
 
 from .chinese_amount import parse_chinese_amount
-from .scenarios import CROSS_RULES, ConsistencyRule, cross_rules_for
+from .scenarios import ConsistencyRule, cross_rules_for
 from .textnorm import (
     normalize,
     normalize_date,
@@ -168,7 +168,7 @@ def _collect_pairs(ledgers: list[DocumentLedger]) -> list[dict[str, Any]]:
         for fld in ledger.fields:
             grouped[(_scenario_of(ledger), fld.name)].append((ledger, fld))
 
-    for (scenario, name), items in grouped.items():
+    for (_scenario, name), items in grouped.items():
         for index in range(len(items)):
             for other in range(index + 1, len(items)):
                 left_ledger, left_field = items[index]

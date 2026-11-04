@@ -23,9 +23,10 @@ Jev 给的是 0~1 的分数，但这个分数**不是**"识别正确的概率"�
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any
 
 
 @dataclass
@@ -46,7 +47,7 @@ class CalibrationSample:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "CalibrationSample":
+    def from_dict(cls, data: dict[str, Any]) -> CalibrationSample:
         return cls(
             score=float(data["score"]),
             correct=bool(data["correct"]),
@@ -116,7 +117,7 @@ def auroc(samples: Sequence[CalibrationSample]) -> float:
             ranks[position] = average_rank
         index = end + 1
 
-    rank_sum_positive = sum(rank for rank, (_, correct) in zip(ranks, ordered) if correct)
+    rank_sum_positive = sum(rank for rank, (_, correct) in zip(ranks, ordered, strict=True) if correct)
     return (rank_sum_positive - n_pos * (n_pos + 1) / 2) / (n_pos * n_neg)
 
 
@@ -139,7 +140,7 @@ def isotonic_regression(samples: Sequence[CalibrationSample]) -> tuple[list[floa
 
     # 每一块：[值和, 权重和, 起点, 终点]
     blocks: list[list[float]] = []
-    for value, weight in zip(ys, weights):
+    for value, weight in zip(ys, weights, strict=True):
         blocks.append([value, weight, len(blocks), len(blocks)])
         while len(blocks) >= 2 and blocks[-2][0] / blocks[-2][1] > blocks[-1][0] / blocks[-1][1]:
             right = blocks.pop()
@@ -163,7 +164,7 @@ def isotonic_regression(samples: Sequence[CalibrationSample]) -> tuple[list[floa
     # 折叠成断点
     folded_x: list[float] = []
     folded_y: list[float] = []
-    for x, y in zip(knot_x, knot_y):
+    for x, y in zip(knot_x, knot_y, strict=True):
         if folded_y and abs(folded_y[-1] - y) < 1e-12:
             continue
         folded_x.append(x)

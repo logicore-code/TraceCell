@@ -18,9 +18,10 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from ..audit import AuditLog
 from ..budget import BudgetPlanner, CellState
@@ -29,27 +30,26 @@ from ..degrade import DegradationLog
 from ..extractors import build_extractor
 from ..ledger import build_ledger, collect_findings
 from ..policy import BudgetPolicy, RiskPolicy
-from ..scenarios import get_scenario
 from ..providers import layout as layout_mod
-from ..providers.pages import Document, as_document
 from ..providers.base import (
+    CATEGORY_TO_JEV,
     PROFILE_ALT,
     PROFILE_PRIMARY,
-    CATEGORY_TO_JEV,
     Escalator,
     ParseProfile,
     Parser,
     Scorer,
 )
+from ..providers.pages import Document, as_document
 from ..providers.vlm import build_review_question
-from ..risk import region_confidence
 from ..reconcile import check_sum_consistency
+from ..risk import region_confidence
 from ..routing import route_document
+from ..scenarios import get_scenario
 from ..types import (
     BudgetReport,
     Candidate,
     Category,
-    Decision,
     DocumentLedger,
     FieldValue,
     Finding,
@@ -351,7 +351,7 @@ class VerificationLoop:
             texts = [c.text for c in region.candidates]
             results = self.scorer.score_best(crop, texts, _jev_category(region.category))
             changed = False
-            for candidate, result in zip(region.candidates, results):
+            for candidate, result in zip(region.candidates, results, strict=True):
                 if candidate.verdict is Verdict.NOT_SCORED:
                     candidate.score = result.score
                     candidate.verdict = result.verdict

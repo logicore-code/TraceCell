@@ -13,7 +13,6 @@ from tracecell.reconcile import check_sum_consistency, reconcile
 from tracecell.scenarios import (
     CROSS_RULES,
     SCENARIOS,
-    ConsistencyRule,
     cross_rules_for,
     get_scenario,
     list_scenarios,
@@ -262,7 +261,7 @@ class TestCrossScenarioReconciliation:
             _ledger("inv-001", "invoice", [("价税合计", "145,318.00")]),
         ]
         reconcile(ledgers)
-        assert all(f.status is Status.DISPUTED for l in ledgers for f in l.fields)
+        assert all(f.status is Status.DISPUTED for ledger in ledgers for f in ledger.fields)
 
 
 class TestCrossRuleSelection:

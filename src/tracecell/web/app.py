@@ -12,7 +12,7 @@ from __future__ import annotations
 import hashlib
 import os
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response
@@ -20,18 +20,18 @@ from fastapi.staticfiles import StaticFiles
 
 from .. import __version__
 from ..agent.loop import VerificationLoop
-from ..extractors import build_extractor
-from ..reconcile import reconcile
-from ..scenarios import list_scenarios
 from ..export import export_csv, export_excel
+from ..extractors import build_extractor
 from ..ledger import export_markdown, ledger_summary
+from ..policy import BudgetPolicy, RiskPolicy
 from ..providers import layout as layout_mod
 from ..providers.jev import HttpJevScorer
 from ..providers.ocr import OpenAICompatOcr
 from ..providers.replay import ReplayEscalator, ReplayParser, ReplayScorer, ReplaySession
 from ..providers.vlm import OpenAICompatVlm
-from ..policy import BudgetPolicy, RiskPolicy
+from ..reconcile import reconcile
 from ..routing import render_review_checklist
+from ..scenarios import list_scenarios
 from ..types import DocumentLedger
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -74,7 +74,6 @@ def _merged_session() -> ReplaySession:
 
 def create_app(provider: str = "replay") -> FastAPI:
     app = FastAPI(title="TraceCell", version=__version__, description="可追责的文档解析 Agent")
-    sessions = _load_sessions()
     merged = _merged_session()
     store = Store()
 
@@ -157,8 +156,8 @@ def create_app(provider: str = "replay") -> FastAPI:
 
     @app.post("/api/analyze")
     async def analyze(
-        file: UploadFile = File(...),
-        scenario: str = Form("invoice"),
+        file: Annotated[UploadFile, File()],
+        scenario: Annotated[str, Form()] = "invoice",
     ) -> JSONResponse:
         content = await file.read()
         if not content:

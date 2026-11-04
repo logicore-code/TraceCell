@@ -7,8 +7,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from tracecell.agent.loop import VerificationLoop
 from tracecell.extractors import RegexFieldExtractor, schema_by_name
 from tracecell.ledger import build_ledger, export_csv, export_markdown, match_region_for_value

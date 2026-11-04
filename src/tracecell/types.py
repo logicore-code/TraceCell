@@ -11,9 +11,10 @@ calibration 四个模块里，这样每一层都能单独替换、单独测试�
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass, field
 from enum import Enum
-from typing import Any, Iterable
+from typing import Any
 
 
 class Category(str, Enum):
@@ -99,7 +100,7 @@ class BBox:
         bottom = max(top, min(height, round(self.y1 * height)))
         return left, top, right, bottom
 
-    def iou(self, other: "BBox") -> float:
+    def iou(self, other: BBox) -> float:
         """交并比。用于判断两个字段是否来自同一块原文。"""
 
         ix0 = max(self.x0, other.x0)
@@ -110,7 +111,7 @@ class BBox:
         union = self.area + other.area - inter
         return inter / union if union > 0 else 0.0
 
-    def contains(self, other: "BBox") -> bool:
+    def contains(self, other: BBox) -> bool:
         return (
             self.x0 <= other.x0
             and self.y0 <= other.y0
@@ -119,7 +120,7 @@ class BBox:
         )
 
     @classmethod
-    def from_pixels(cls, left: int, top: int, right: int, bottom: int, width: int, height: int) -> "BBox":
+    def from_pixels(cls, left: int, top: int, right: int, bottom: int, width: int, height: int) -> BBox:
         return cls(
             x0=round(left / width, 6),
             y0=round(top / height, 6),
@@ -153,7 +154,7 @@ class Candidate:
         return data
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Candidate":
+    def from_dict(cls, data: dict[str, Any]) -> Candidate:
         data = dict(data)
         data["verdict"] = Verdict(data.get("verdict", "not_scored"))
         return cls(**data)
@@ -206,7 +207,7 @@ class Region:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Region":
+    def from_dict(cls, data: dict[str, Any]) -> Region:
         return cls(
             id=data["id"],
             page=data["page"],
@@ -248,7 +249,7 @@ class FieldValue:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "FieldValue":
+    def from_dict(cls, data: dict[str, Any]) -> FieldValue:
         return cls(
             name=data["name"],
             value=data["value"],
@@ -283,7 +284,7 @@ class Finding:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Finding":
+    def from_dict(cls, data: dict[str, Any]) -> Finding:
         return cls(
             kind=data["kind"],
             severity=Severity(data.get("severity", "medium")),
@@ -340,7 +341,7 @@ class BudgetReport:
         return data
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "BudgetReport":
+    def from_dict(cls, data: dict[str, Any]) -> BudgetReport:
         return cls(**data)
 
 
@@ -401,7 +402,7 @@ class DocumentLedger:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "DocumentLedger":
+    def from_dict(cls, data: dict[str, Any]) -> DocumentLedger:
         return cls(
             doc_id=data["doc_id"],
             source=data.get("source", ""),
@@ -421,5 +422,5 @@ class DocumentLedger:
         return json.dumps(self.to_dict(), ensure_ascii=False, indent=indent)
 
     @classmethod
-    def from_json(cls, payload: str) -> "DocumentLedger":
+    def from_json(cls, payload: str) -> DocumentLedger:
         return cls.from_dict(json.loads(payload))

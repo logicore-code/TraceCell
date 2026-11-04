@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import math
 import random
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -31,6 +32,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 sys.path.insert(0, str(ROOT / "src"))
 from tracecell.recorded import apply_scores, load_scores  # noqa: E402
+
 SAMPLES_DIR = ROOT / "samples"
 SESSIONS_DIR = SAMPLES_DIR / "sessions"
 
@@ -283,7 +285,7 @@ class Page:
         total = sum(widths) + spacing * (len(content) - 1)
         cursor = center_x - total / 2
         boxes = []
-        for ch, width in zip(content, widths):
+        for ch, width in zip(content, widths, strict=True):
             self.draw.text((cursor, y), ch, font=font_obj, fill=fill, anchor="la")
             boxes.append(self.draw.textbbox((cursor, y), ch, font=font_obj, anchor="la"))
             cursor += width + spacing

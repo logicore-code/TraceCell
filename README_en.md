@@ -139,6 +139,30 @@ detail line that does not add up to the total. A contract total that does not
 match the invoice. A balance sheet that does not balance. No amount of OCR
 accuracy fixes these — only cross-field arithmetic does.
 
+## Numbers that come from a real model
+
+Two artefacts in the repository are recordings, not hand-written numbers:
+
+- `samples/real_ocr/` — what MiniCPM-OCR 1.0 actually reads on the sample
+  documents, produced by llama.cpp on CPU (`scripts/record_ocr.py`).
+- `samples/jev_scores.json` — what Jev actually scores every candidate,
+  also llama.cpp with the official GGUF weights (`scripts/record_jev.py`).
+
+The sample sessions read their confidence values back from that recording, so
+the thresholds and the AUROC quoted below sit on top of a real model rather
+than on plausible-looking constants.
+
+`samples/jev_official/` holds the three example cases from the Jev repository
+(Apache-2.0), each with the reference render and the probability the official
+implementation produced. `scripts/verify_against_official.py` checks this
+setup against them: scoring the official render reproduces the official
+probability to within 0.005 on all three.
+
+One caveat the official examples spell out: absolute Jev scores are not
+probabilities of correctness — the correct transcription of a table scores
+0.04. Compare candidates against each other, never against a fixed threshold.
+That is why the threshold here is calibrated rather than assumed.
+
 ## What it saves
 
 Every document verification scheme answers the same two questions: how much
@@ -151,19 +175,19 @@ $ tracecell baseline --session samples/sessions
 Strategy            Human review    Share    Missed: OCR    Missed: document    Cost
 ------------------------------------------------------------------------------------
 All by hand               83      100.0%             0                 0      0.00 rcu
-Trust the OCR              0        0.0%             3                 9      0.00 rcu
-TraceCell                 20       24.1%             0                 0     37.30 rcu
+Trust the OCR              0        0.0%             3                 8      0.00 rcu
+TraceCell                 15       18.1%             0                 0     54.00 rcu
 
-83 regions in total: 3 reading errors, 9 document-level contradictions.
+83 regions in total: 3 reading errors, 8 document-level contradictions.
 ```
 
-The second row is the interesting one. "Trust the OCR" misses 9 contradictions
+The second row is the interesting one. "Trust the OCR" misses 8 contradictions
 that OCR read *perfectly*. A better model does not help; only cross-field
 arithmetic does.
 
-The third row is not "check less". It is 83 regions narrowed to 20 by risk,
-where those 20 are the ones with contested readings, failing arithmetic, or
-critical fields. The other 63 are confirmed clean, not unchecked.
+The third row is not "check less". It is 83 regions narrowed to 15 by risk,
+where those 15 are the ones with contested readings, failing arithmetic, or
+critical fields. The other 68 are confirmed clean, not unchecked.
 
 The sample set includes one case that makes the point: an invoice sells the
 company as `南京海川软件**股份**有限公司`, and the OCR reads it confidently

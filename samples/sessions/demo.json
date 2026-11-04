@@ -24,13 +24,13 @@
               "text": "浙江增值税专用发票",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.99
+              "score": 0.997027
             },
             {
               "text": "浙江增值税专用发票",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.97
+              "score": 0.997027
             }
           ],
           "truth": "浙江增值税专用发票"
@@ -51,7 +51,7 @@
               "text": "发票代码：251170000000",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.98
+              "score": 0.938157
             }
           ],
           "truth": "发票代码：251170000000"
@@ -72,13 +72,13 @@
               "text": "发票号码：25117000000012345678",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.99
+              "score": 0.996196
             },
             {
               "text": "发票号码：25117000000012345678",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.96
+              "score": 0.996196
             }
           ],
           "truth": "发票号码：25117000000012345678"
@@ -99,7 +99,7 @@
               "text": "购买方名称：杭州明远网络科技有限公司",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.97
+              "score": 0.997967
             }
           ],
           "truth": "购买方名称：杭州明远网络科技有限公司"
@@ -120,19 +120,19 @@
               "text": "销售方名称：南京海川软件股分有限公司",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.91
+              "score": 0.0
             },
             {
               "text": "销售方名称：南京海川软件股份有限公司",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.46
+              "score": 0.997959
             },
             {
               "text": "销售方名称：南京海川软件股分有限公同",
               "origin": "reparse-16x",
-              "verdict": "not_scored",
-              "score": null,
+              "verdict": "scored",
+              "score": 0.0,
               "detail": "Jev 评分服务超时，本轮未返回分数"
             }
           ],
@@ -154,7 +154,7 @@
               "text": "纳税人识别号：91330100MA2XXXXX1J",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.96
+              "score": 0.926464
             }
           ],
           "truth": "纳税人识别号：91330100MA2XXXXX1J"
@@ -175,7 +175,7 @@
               "text": "纳税人识别号：91320100MA1XXXXX9K",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.97
+              "score": 0.806488
             }
           ],
           "truth": "纳税人识别号：91320100MA1XXXXX9K"
@@ -196,7 +196,7 @@
               "text": "地址、电话：杭州市西湖区文三路 398 号 6 幢 12 层",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.94
+              "score": 0.998078
             }
           ],
           "truth": "地址、电话：杭州市西湖区文三路 398 号 6 幢 12 层"
@@ -217,7 +217,7 @@
               "text": "地址、电话：南京市建邺区江东中路 106 号 8 幢 501 室",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.93
+              "score": 0.996917
             }
           ],
           "truth": "地址、电话：南京市建邺区江东中路 106 号 8 幢 501 室"
@@ -238,7 +238,7 @@
               "text": "技术开发服务*信息技术服务　—　项　1　86,000.00　¥86,000.00　13%　¥11,180.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.96
+              "score": 0.897867
             }
           ],
           "truth": "技术开发服务*信息技术服务　—　项　1　86,000.00　¥86,000.00　13%　¥11,180.00"
@@ -259,7 +259,7 @@
               "text": "系统运维服务*信息技术服务　—　项　1　42,600.00　¥42,600.00　13%　¥5,538.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.95
+              "score": 0.890727
             }
           ],
           "truth": "系统运维服务*信息技术服务　—　项　1　42,600.00　¥42,600.00　13%　¥5,538.00"
@@ -280,13 +280,13 @@
               "text": "金额 ¥128,600.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.95
+              "score": 0.978699
             },
             {
               "text": "金额 ¥128,600.00",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.93
+              "score": 0.978699
             }
           ],
           "truth": "金额 ¥128,600.00"
@@ -307,13 +307,13 @@
               "text": "税额 ¥16,718.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.94
+              "score": 0.985378
             },
             {
               "text": "税额 ¥16,718.00",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.92
+              "score": 0.985378
             }
           ],
           "truth": "税额 ¥16,718.00"
@@ -334,7 +334,7 @@
               "text": "价税合计（大写）壹拾肆万伍仟叁佰壹拾捌圆整",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.92
+              "score": 0.994788
             }
           ],
           "truth": "价税合计（大写）壹拾肆万伍仟叁佰壹拾捌圆整"
@@ -355,25 +355,25 @@
               "text": "价税合计（小写）¥145,318.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.53
+              "score": 0.993042
             },
             {
               "text": "价税合计（小写）¥145,818.00",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.19
+              "score": 0.0
             },
             {
               "text": "价税合计（小写）¥145,318.00",
               "origin": "vlm-review",
               "verdict": "scored",
-              "score": 0.96
+              "score": 0.993042
             },
             {
               "text": "价税合计（小写）¥145,318.OO",
               "origin": "reparse-16x",
-              "verdict": "not_scored",
-              "score": null,
+              "verdict": "scored",
+              "score": 3e-06,
               "detail": "Jev 评分服务超时，本轮未返回分数"
             }
           ],
@@ -395,13 +395,13 @@
               "text": "备注：本次服务费对应合同 HT-2026-1043，账期 30 天。",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.95
+              "score": 0.998496
             },
             {
               "text": "备注：本次服务费对应合同 HT-2026-1043，账期为 30 天。",
               "origin": "reparse-16x",
-              "verdict": "failed",
-              "score": null,
+              "verdict": "scored",
+              "score": 0.234356,
               "detail": "Jev 渲染分块失败，未产出分数"
             }
           ],
@@ -423,7 +423,7 @@
               "text": "开票日期：2026年10月18日",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.98
+              "score": 0.998779
             }
           ],
           "truth": "开票日期：2026年10月18日"
@@ -444,13 +444,13 @@
               "text": "南京海川软件股份有限公司 发票专用章",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.93
+              "score": 0.19843
             },
             {
               "text": "南京海川软件股份有限公司 发票专用章",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.91
+              "score": 0.19843
             }
           ],
           "truth": "南京海川软件股份有限公司 发票专用章"
@@ -547,13 +547,13 @@
               "text": "技术开发与运维服务合同",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.99
+              "score": 0.997867
             },
             {
               "text": "技术开发与运维服务合同",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.96
+              "score": 0.997867
             }
           ],
           "truth": "技术开发与运维服务合同"
@@ -574,7 +574,7 @@
               "text": "合同编号：HT-2026-1043",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.98
+              "score": 0.991846
             }
           ],
           "truth": "合同编号：HT-2026-1043"
@@ -595,7 +595,7 @@
               "text": "甲方：杭州明远网络科技有限公司",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.97
+              "score": 0.998407
             }
           ],
           "truth": "甲方：杭州明远网络科技有限公司"
@@ -616,7 +616,7 @@
               "text": "乙方：南京海川信息技术有限公司",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.96
+              "score": 0.998508
             }
           ],
           "truth": "乙方：南京海川信息技术有限公司"
@@ -637,7 +637,7 @@
               "text": "第一条　服务内容",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.97
+              "score": 0.984107
             }
           ],
           "truth": "第一条　服务内容"
@@ -658,7 +658,7 @@
               "text": "乙方为甲方提供订单中心与结算系统的定制开发服务，包括需求调研、系统设计、\n编码实现、联调测试与上线支持；并在验收合格后提供为期十二个月的运行维护\n服务，含系统巡检、故障响应与版本升级。",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.93
+              "score": 0.503724
             }
           ],
           "truth": "乙方为甲方提供订单中心与结算系统的定制开发服务，包括需求调研、系统设计、\n编码实现、联调测试与上线支持；并在验收合格后提供为期十二个月的运行维护\n服务，含系统巡检、故障响应与版本升级。"
@@ -679,7 +679,7 @@
               "text": "第二条　服务期限与交付",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.96
+              "score": 0.997409
             }
           ],
           "truth": "第二条　服务期限与交付"
@@ -700,7 +700,7 @@
               "text": "服务期自 2026年11月01日 起至 2027年10月31日 止。乙方应于服务期起始后四十五\n日内完成首期交付，并提交阶段验收报告。",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.92
+              "score": 0.531448
             }
           ],
           "truth": "服务期自 2026年11月01日 起至 2027年10月31日 止。乙方应于服务期起始后四十五\n日内完成首期交付，并提交阶段验收报告。"
@@ -721,7 +721,7 @@
               "text": "第三条　合同金额",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.98
+              "score": 0.984817
             }
           ],
           "truth": "第三条　合同金额"
@@ -742,19 +742,19 @@
               "text": "合同金额（大写）：伍拾捌万圆整",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.24
+              "score": 0.000109
             },
             {
               "text": "合同金额（大写）：伍拾捌万元整",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.41
+              "score": 0.992997
             },
             {
               "text": "合同金额（大写）：伍拾捌万圆整。",
               "origin": "reparse-16x",
-              "verdict": "not_scored",
-              "score": null,
+              "verdict": "scored",
+              "score": 6.3e-05,
               "detail": "Jev 评分服务超时，本轮未返回分数"
             }
           ],
@@ -776,19 +776,19 @@
               "text": "合同金额：¥580,000.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.38
+              "score": 0.979092
             },
             {
               "text": "合同金额：¥580,800.00",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.19
+              "score": 0.0
             },
             {
               "text": "合同金额：¥580,000.OO",
               "origin": "reparse-16x",
-              "verdict": "not_scored",
-              "score": null,
+              "verdict": "scored",
+              "score": 1e-06,
               "detail": "Jev 评分服务超时，本轮未返回分数"
             }
           ],
@@ -810,7 +810,7 @@
               "text": "第四条　付款方式与期限",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.96
+              "score": 0.997321
             }
           ],
           "truth": "第四条　付款方式与期限"
@@ -831,7 +831,7 @@
               "text": "付款期限：合同签订后 30 日内支付合同金额的 40%，验收合格之日起 60 日内支付余款 60%。\n甲方付款以乙方开具等额增值税专用发票为前提。",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.93
+              "score": 0.944698
             }
           ],
           "truth": "付款期限：合同签订后 30 日内支付合同金额的 40%，验收合格之日起 60 日内支付余款 60%。\n甲方付款以乙方开具等额增值税专用发票为前提。"
@@ -852,7 +852,7 @@
               "text": "甲方（盖章）：杭州明远网络科技有限公司",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.95
+              "score": 0.998196
             }
           ],
           "truth": "甲方（盖章）：杭州明远网络科技有限公司"
@@ -873,7 +873,7 @@
               "text": "乙方（盖章）：南京海川信息技术有限公司",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.95
+              "score": 0.998009
             }
           ],
           "truth": "乙方（盖章）：南京海川信息技术有限公司"
@@ -894,7 +894,7 @@
               "text": "签署日期：2026年10月21日",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.97
+              "score": 0.99789
             }
           ],
           "truth": "签署日期：2026年10月21日"
@@ -915,7 +915,7 @@
               "text": "签署日期：2026年10月21日",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.97
+              "score": 0.997943
             }
           ],
           "truth": "签署日期：2026年10月21日"
@@ -936,13 +936,13 @@
               "text": "杭州明远网络科技有限公司 合同专用章",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.93
+              "score": 0.576501
             },
             {
               "text": "杭州明远网络科技有限公司 合同专用章",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.92
+              "score": 0.576501
             }
           ],
           "truth": "杭州明远网络科技有限公司 合同专用章"
@@ -963,13 +963,13 @@
               "text": "南京海川信息技术有限公司 合同专用章",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.92
+              "score": 0.507307
             },
             {
               "text": "南京海川信息技术有限公司 合同专用章",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.9
+              "score": 0.507307
             }
           ],
           "truth": "南京海川信息技术有限公司 合同专用章"
@@ -1045,13 +1045,13 @@
               "text": "费用报销单",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.98
+              "score": 0.99841
             },
             {
               "text": "费用报销单",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.95
+              "score": 0.99841
             }
           ],
           "truth": "费用报销单"
@@ -1072,7 +1072,7 @@
               "text": "单据号：BX-20261025-007",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.97
+              "score": 0.998663
             }
           ],
           "truth": "单据号：BX-20261025-007"
@@ -1093,7 +1093,7 @@
               "text": "所属部门：平台研发部",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.95
+              "score": 0.998295
             }
           ],
           "truth": "所属部门：平台研发部"
@@ -1114,19 +1114,19 @@
               "text": "报销人：李思远",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.52
+              "score": 0.984142
             },
             {
               "text": "报销人：李思源",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.27
+              "score": 0.142536
             },
             {
               "text": "报销人：李思沅",
               "origin": "reparse-16x",
-              "verdict": "not_scored",
-              "score": null,
+              "verdict": "scored",
+              "score": 0.000358,
               "detail": "Jev 评分服务超时，本轮未返回分数"
             }
           ],
@@ -1148,7 +1148,7 @@
               "text": "日期：2026年10月25日",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.98
+              "score": 0.998726
             }
           ],
           "truth": "日期：2026年10月25日"
@@ -1169,7 +1169,7 @@
               "text": "费用类型：差旅费、办公用品、业务招待费",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.93
+              "score": 0.998819
             }
           ],
           "truth": "费用类型：差旅费、办公用品、业务招待费"
@@ -1190,7 +1190,7 @@
               "text": "费用类型",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.94
+              "score": 0.996916
             }
           ],
           "truth": "费用类型"
@@ -1211,7 +1211,7 @@
               "text": "说明　金额",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.94
+              "score": 0.940671
             }
           ],
           "truth": "说明　金额"
@@ -1232,7 +1232,7 @@
               "text": "差旅费　杭州至南京项目现场实施差旅　1,480.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.92
+              "score": 0.987886
             }
           ],
           "truth": "差旅费　杭州至南京项目现场实施差旅　1,480.00"
@@ -1253,7 +1253,7 @@
               "text": "办公用品　研发团队耗材采购　386.50",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.91
+              "score": 0.985983
             }
           ],
           "truth": "办公用品　研发团队耗材采购　386.50"
@@ -1274,7 +1274,7 @@
               "text": "业务招待费　客户现场沟通餐费　1,098.00",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.9
+              "score": 0.988623
             }
           ],
           "truth": "业务招待费　客户现场沟通餐费　1,098.00"
@@ -1295,19 +1295,19 @@
               "text": "合计金额：¥2,864.50",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.37
+              "score": 0.985263
             },
             {
               "text": "合计金额：¥2,964.50",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.19
+              "score": 0.0
             },
             {
               "text": "合计金额：¥2,864.5O",
               "origin": "reparse-16x",
-              "verdict": "not_scored",
-              "score": null,
+              "verdict": "scored",
+              "score": 2.3e-05,
               "detail": "Jev 评分服务超时，本轮未返回分数"
             }
           ],
@@ -1329,13 +1329,13 @@
               "text": "审批意见：同意报销，请补充差旅报销明细。",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.94
+              "score": 0.972198
             },
             {
               "text": "审批意见：同意报销，请补充差旅报销明细。",
               "origin": "reparse-16x",
               "verdict": "scored",
-              "score": 0.92
+              "score": 0.972198
             }
           ],
           "truth": "审批意见：同意报销，请补充差旅报销明细。"
@@ -1356,7 +1356,7 @@
               "text": "李思远",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.92
+              "score": 0.982382
             }
           ],
           "truth": "李思远"
@@ -1377,7 +1377,7 @@
               "text": "同意报销",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.93
+              "score": 0.863684
             }
           ],
           "truth": "同意报销"
@@ -1398,7 +1398,7 @@
               "text": "费用凭证粘贴区",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.92
+              "score": 0.921927
             }
           ],
           "truth": "费用凭证粘贴区"
@@ -1419,7 +1419,7 @@
               "text": "部门负责人：周　立　财务审核：陈　涛　出纳：孙　敏",
               "origin": "primary",
               "verdict": "scored",
-              "score": 0.92
+              "score": 0.983627
             }
           ],
           "truth": "部门负责人：周　立　财务审核：陈　涛　出纳：孙　敏"

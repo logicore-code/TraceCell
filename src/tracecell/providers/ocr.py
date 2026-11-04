@@ -22,12 +22,12 @@ from __future__ import annotations
 import base64
 import json
 import subprocess
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import requests
 
 from ..types import BBox, Category, Region
-from . import layout as layout_mod
 from . import layout as layout_mod
 from .base import TASK_PROMPTS, PageParse, ParseProfile
 

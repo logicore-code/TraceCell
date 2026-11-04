@@ -33,11 +33,13 @@ import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from tracecell.providers import layout  # noqa: E402
+from tracecell.providers.pages import is_pdf, load_document  # noqa: E402
 from tracecell.render import render_text  # noqa: E402
 from tracecell.types import BBox  # noqa: E402
 
@@ -69,6 +71,27 @@ def score_pair(original_png: bytes, text: str, url: str) -> float | None:
         return None
 
 
+def _flush(results: dict[str, Any], out: str) -> None:
+    """每条结果都落盘。
+
+    一次录制要跑几十分钟，中途挂掉不该全丢。
+    """
+
+    target = Path(out)
+    existing: dict[str, Any] = {}
+    if target.exists():
+        existing = json.loads(target.read_text(encoding="utf-8"))
+    # 按区域合并，不能按文档整个替换——续跑的时候只处理了部分区域，
+    # 直接替换会把之前录好的区域冲掉。
+    for doc_id, regions in results.items():
+        for region_id, scores in regions.items():
+            existing.setdefault(doc_id, {}).setdefault(region_id, {}).update(scores)
+    target.write_text(
+        json.dumps(existing, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="用真实的 Jev 给样例区域打分")
     parser.add_argument("--session", required=True, help="会话 JSON 路径")
@@ -80,28 +103,52 @@ def main() -> int:
     session_path = Path(args.session)
     session = json.loads(session_path.read_text(encoding="utf-8"))
 
+    # 已经打过分的跳过。一轮录制要跑几十分钟，中间断了得能接着来。
+    done: dict[str, dict[str, dict[str, float]]] = {}
+    out_path = Path(args.out)
+    if out_path.exists():
+        done = json.loads(out_path.read_text(encoding="utf-8"))
+
     tasks: list[tuple[str, str, str, bytes, str]] = []
+    skipped = 0
     for document in session["documents"]:
         source = ROOT / document["source"]
         if not source.exists():
             print(f"  跳过 {document['doc_id']}：找不到 {source}")
             continue
-        image = source.read_bytes()
+        raw = source.read_bytes()
+        # PDF 的区域坐标是相对那一页的，得先把页渲染出来再裁。
+        # 直接拿 PDF 字节去裁会裁出空白，出来的分数是废的。
+        pages: list[bytes] = []
+        if is_pdf(raw):
+            pages = [page.png for page in load_document(raw, dpi=150).pages]
         for region in document["regions"]:
             bbox = region["bbox"]
+            image = raw
+            if pages:
+                index = int(region.get("page", 1)) - 1
+                if not 0 <= index < len(pages):
+                    continue
+                image = pages[index]
             crop = layout.crop(
                 image, BBox(bbox["x0"], bbox["y0"], bbox["x1"], bbox["y1"])
             )
             for candidate in region.get("candidates", []):
+                text = candidate["text"]
+                if text in done.get(document["doc_id"], {}).get(region["id"], {}):
+                    skipped += 1
+                    continue
                 tasks.append(
                     (
                         document["doc_id"],
                         region["id"],
-                        candidate["text"],
+                        text,
                         crop,
                         candidate.get("origin", "primary"),
                     )
                 )
+    if skipped:
+        print(f"  已有 {skipped} 个候选打过分，跳过")
 
     print(f"  待打分的候选 {len(tasks)} 个，并发 {args.jobs}")
     started = time.time()
@@ -121,19 +168,12 @@ def main() -> int:
             results.setdefault(doc_id, {}).setdefault(region_id, {})[text] = round(value, 6)
             flag = "✓" if value > 0.5 else " "
             print(f"    [{index}/{len(tasks)}] {flag} {doc_id}:{region_id} {origin:12s} {value:.4f}")
+            _flush(results, args.out)
 
     elapsed = time.time() - started
     print(f"  用时 {elapsed / 60:.1f} 分钟")
 
-    out_path = Path(args.out)
-    existing: dict[str, Any] = {}
-    if out_path.exists():
-        existing = json.loads(out_path.read_text(encoding="utf-8"))
-    existing.update(results)
-    out_path.write_text(
-        json.dumps(existing, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+    _flush(results, args.out)
     print(f"  已写入 {out_path}")
     return 0
 

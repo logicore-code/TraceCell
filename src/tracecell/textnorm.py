@@ -10,7 +10,6 @@
 from __future__ import annotations
 
 import re
-import unicodedata
 from decimal import Decimal, InvalidOperation
 
 _FULLWIDTH_PUNCT = "．，：；（）【】％－～"
@@ -141,7 +140,7 @@ def diff_positions(left: str, right: str) -> list[int]:
     """返回两个字符串第一个不同的字符下标，方便在界面上高亮差异。"""
 
     left, right = normalize(left), normalize(right)
-    for index, (a, b) in enumerate(zip(left, right)):
+    for index, (a, b) in enumerate(zip(left, right, strict=False)):
         if a != b:
             return [index]
     if len(left) != len(right):

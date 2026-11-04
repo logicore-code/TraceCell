@@ -36,6 +36,11 @@ dev = [
     "pytest>=7.4",
     "ruff>=0.3",
 ]
+# 渲染候选文本给 Jev 比对。官方渲染器用 Chromium + 中文字体，
+# 装不上 playwright 时 tracecell.render 会退回 PIL，但绝对分数会偏移。
+render = [
+    "playwright>=1.40",
+]
 
 [project.scripts]
 tracecell = "tracecell.cli:main"

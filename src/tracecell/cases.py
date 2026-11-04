@@ -17,9 +17,8 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .providers import layout as layout_mod
-from .providers.base import CATEGORY_TO_JEV, ParseProfile, PROFILE_PRIMARY
+from .providers.base import CATEGORY_TO_JEV, PROFILE_PRIMARY, ParseProfile
 from .providers.vlm import build_review_question
-from .risk import region_confidence
 from .types import DocumentLedger, Region, Verdict
 
 

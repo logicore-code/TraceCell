@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from tracecell.reconcile import infer_kind, merge_ledgers, normalize_by_kind, reconcile
+from tracecell.reconcile import infer_kind, merge_ledgers, reconcile
 from tracecell.textnorm import (
     normalize,
     normalize_date,

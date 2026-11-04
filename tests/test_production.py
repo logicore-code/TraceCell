@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import io
 import json
 from pathlib import Path
 
@@ -560,3 +561,38 @@ class TestRecordedScores:
 
         assert apply_scores([{"text": "x"}], None) == 0
         assert load_scores("/nonexistent/jev_scores.json") == {}
+
+
+class TestRenderer:
+    """候选文本的渲染。
+
+    参数照着官方渲染器抄：字号 18px、行高 2.0、容器按内容收缩、白边裁掉
+    16px。抄这些是为了让分数跟官方可比——渲染环境差得远，绝对分数就偏。
+    """
+
+    def test_renders_readable_png(self):
+        from PIL import Image
+
+        from tracecell.render import render_text
+
+        png = render_text("合同总价：¥177,071.00")
+        image = Image.open(io.BytesIO(png))
+        assert image.format == "PNG"
+        assert image.width > 50 and image.height > 10
+
+    def test_not_blank(self):
+        from PIL import Image, ImageChops
+
+        from tracecell.render import render_text
+
+        image = Image.open(io.BytesIO(render_text("签署日期：2026年10月17日"))).convert("RGB")
+        background = Image.new(image.mode, image.size, "white")
+        assert ImageChops.difference(image, background).getbbox() is not None
+
+    def test_line_height_is_double(self):
+        """官方是行高 2.0，改了会让绝对分数偏移。"""
+
+        from tracecell import render
+
+        assert render.LINE_HEIGHT == 2.0
+        assert render.FONT_SIZE == 18

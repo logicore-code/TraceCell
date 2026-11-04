@@ -21,7 +21,8 @@ import base64
 import json
 import time
 import urllib.request
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 import requests
 
@@ -246,12 +247,23 @@ class LlamaCppJevScorer:
     def score(self, image: bytes, text: str, category: str = "text") -> ScoreResult:
         """给一个候选打分。类别在这里用不上，模型只判断视觉一致性。"""
 
+        return self.score_with_render(image, text, self._render(text))
+
+    def score_with_render(
+        self, image: bytes, text: str, render_png: bytes
+    ) -> ScoreResult:
+        """用给定的渲染图打分。
+
+        渲染图已经存在的时候用这个——比如复现官方样例：官方给了参考渲染图，
+        直接拿来比对，不必重新渲染一遍。
+        """
+
         try:
             body = {
                 "state": text,
                 "files": [
                     _data_url(image),
-                    _data_url(self._render(text)),
+                    _data_url(render_png),
                 ],
                 "questions": {
                     "consistency": {"type": "choice", "criteria": {"0": None, "1": None}}

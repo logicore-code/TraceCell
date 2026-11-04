@@ -14,7 +14,8 @@ from __future__ import annotations
 
 import csv
 import io
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from .risk import field_confidence, region_confidence, summarize_risk
 from .textnorm import normalize, similarity
@@ -85,7 +86,6 @@ def collect_findings(
     """
 
     findings: list[Finding] = []
-    tolerance = budget_policy.residual_tolerance
 
     for region in regions.values():
         scored = [c for c in region.candidates if c.scored]

@@ -17,10 +17,11 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass, field
-from typing import Any, Callable
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
 
-from .scenarios import SCENARIOS, FieldPattern, Scenario, get_scenario
+from .scenarios import FieldPattern, Scenario, get_scenario
 from .types import FieldValue, Region
 
 __all__ = [
@@ -182,7 +183,7 @@ class TableRowExtractor:
             # 先把整行的列都校验一遍，任何一列不合规这行就不是明细行
             if not all(self._type_ok(index, value) for index, value in enumerate(values)):
                 continue
-            for name, value in zip(columns, values):
+            for name, value in zip(columns, values, strict=True):
                 fields.append(
                     FieldValue(
                         name=f"{self.spec.prefix}:{label}:{name}",

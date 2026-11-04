@@ -119,7 +119,36 @@ scorer = LlamaCppJevScorer(base_url="http://127.0.0.1:18499")
 - **图像顺序不能反**：原图在前、候选文本的渲染图在后。反过来问的就不是同一个
   问题，而且不会报错，只会给一个错的数。
 - **渲染图要自己提供**。官方 SDK 用 Chromium 加中文字体渲染候选文本，
-  `tracecell.render` 做同样的事。渲染环境不同，绝对分数会差，排序是稳的。
+  `tracecell.render` 照着官方渲染器的参数做同样的事。
+
+### 渲染器：分数准不准，全看它
+
+Jev 比的是两张图——原图块，和候选文本渲染出来的图。两张图差得越远，分数越
+没意义。所以渲染参数不是审美问题，是精度问题。
+
+`tracecell.render` 的参数抄自官方 `render_label.py` 的纯文本路径：字号 18px、
+行高 2.0、官方字体栈、容器按内容收缩、白边裁掉 16px、宽高比超过 8 就收窄
+换行。抄错一项，分数整体偏移。
+
+装上 Playwright 用 Chromium 渲染（`pip install "tracecell[render]"`），
+没有就退回 PIL。**两条路出来的图不一样，分数会跟着变**，所以：
+
+- 要跟官方数字比，就用 Chromium 这条；
+- 已经录好的分数（`samples/jev_scores.json`）是在 Chromium 上录的。
+
+有一处这里没有实现：官方渲染器用 KaTeX 渲染公式、用 HTML 表格渲染表格。
+公式和表格区域走不通会退化成和公式长得很像的字符串，这类区域的分数不可信。
+官方自己的样例 03 也说明表格的绝对分不可用（正确转写只有 0.04）——要比的是
+候选之间的排序，不是绝对值。
+
+想拿官方样例验证这条链路：
+
+```bash
+python3 scripts/verify_against_official.py
+```
+
+样例文件收在 `samples/jev_official/`，来自 OpenBMB/MiniCPM-OCR 仓库
+（Apache-2.0），里面带着官方自己跑出来的概率。
 
 想在纯 CPU 上验证整条链路，用仓库里的录制脚本：
 

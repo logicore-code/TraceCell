@@ -17,16 +17,15 @@ import sys
 from pathlib import Path
 
 from . import __version__
+from .agent.loop import VerificationLoop
 from .audit import AuditLog
 from .baseline import compare as compare_baselines
 from .batch import discover, run_batch, write_summary
-from .degrade import DegradationLog, ResilientEscalator, ResilientParser, ResilientScorer
-from .export import export_bundle, export_csv, export_excel, export_json, export_markdown
-from .feedback import apply_all, load_feedback, save_feedback, to_labeled_samples
-from .agent.loop import VerificationLoop
 from .calibration import calibrate, load_samples, per_category_stats
+from .degrade import DegradationLog, ResilientEscalator, ResilientParser, ResilientScorer
+from .export import export_bundle, export_excel, export_json
 from .extractors import build_extractor
-from .scenarios import list_scenarios
+from .feedback import apply_all, load_feedback, to_labeled_samples
 from .ledger import export_csv, export_markdown, ledger_summary
 from .policy import BudgetPolicy, RiskPolicy
 from .providers.jev import HttpJevScorer
@@ -34,6 +33,7 @@ from .providers.ocr import OpenAICompatOcr
 from .providers.replay import ReplayEscalator, ReplayParser, ReplayScorer, ReplaySession
 from .providers.vlm import OpenAICompatVlm
 from .reconcile import merge_ledgers, reconcile
+from .scenarios import list_scenarios
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SESSION = ROOT / "samples" / "sessions"
@@ -318,7 +318,6 @@ def cmd_fit_gains(args) -> int:
 def cmd_baseline(args) -> int:
     """三条路线的基线对比：人工要花多少力气，能拦下多少错误。"""
 
-    from .baseline import compare as compare_baselines
     from .reconcile import check_sum_consistency, reconcile
     from .scenarios import get_scenario
 

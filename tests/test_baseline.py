@@ -13,7 +13,6 @@ from tracecell.types import (
     Category,
     DocumentLedger,
     Region,
-    Status,
     Verdict,
 )
 

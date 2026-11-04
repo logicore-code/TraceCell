@@ -7,7 +7,6 @@ CLI 的参数解析和子命令装配最容易在重构时漏改——构造函�
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import pytest
