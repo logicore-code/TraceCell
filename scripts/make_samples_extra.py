@@ -727,7 +727,7 @@ def build_purchase_contract() -> tuple[Page, list[dict]]:
         ],
     )
 
-    # 合同总价（大写）。放���面，不挪动别的元素。
+    # 合同总价（大写）。放在下面，不挪动别的元素。
     y += 56
     r_total_cn = page.text(
         (left + 14, y),
