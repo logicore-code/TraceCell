@@ -417,9 +417,24 @@ def cmd_calibrate(args) -> int:
 
 
 def cmd_reconcile(args) -> int:
+    """跨文档对账。
+
+    参数既可以是导出的账本 JSON，也可以是会话目录——目录的话按回放模式
+    跑一遍所有文档再对账，和 demo / baseline 的用法一致。
+    """
+
     from .types import DocumentLedger
 
-    ledgers = [DocumentLedger.from_json(Path(path).read_text(encoding="utf-8")) for path in args.ledgers]
+    ledgers: list[DocumentLedger] = []
+    for raw in args.ledgers:
+        path = Path(raw)
+        if path.is_dir():
+            ledgers.extend(_replay_ledgers(args, path))
+        else:
+            ledgers.append(DocumentLedger.from_json(path.read_text(encoding="utf-8")))
+    if not ledgers:
+        print("没有可对账的账本", file=sys.stderr)
+        return 1
     result = reconcile(ledgers)
     print(f"比对字段 {result.compared_fields} 个，一致 {result.matched} 个，矛盾 {len(result.mismatches)} 处")
     for mismatch in result.mismatches:
@@ -434,6 +449,19 @@ def cmd_reconcile(args) -> int:
         Path(args.out).write_text(merged.to_json(), encoding="utf-8")
         print(f"\n合并账本已保存：{args.out}", file=sys.stderr)
     return 1 if result.mismatches else 0
+
+
+def _replay_ledgers(args, session_path: Path) -> list:
+    """按回放模式跑一遍会话里的所有文档，返回账本。"""
+
+    session = _load_session(session_path)
+    ledgers = []
+    for doc_id in session.doc_ids():
+        document = session.document(doc_id) or {}
+        scenario = document.get("schema", "invoice")
+        loop = _build_loop(args, doc_id, scenario, session)
+        ledgers.append(loop.run(b"", doc_id, document.get("source", "")).ledger)
+    return ledgers
 
 
 def cmd_doctor(args) -> int:
@@ -565,8 +593,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_cal.set_defaults(func=cmd_calibrate)
 
     p_rec = sub.add_parser("reconcile", help="跨文档对账")
-    p_rec.add_argument("ledgers", nargs="+")
+    p_rec.add_argument("ledgers", nargs="+", help="账本 JSON，或会话目录")
     p_rec.add_argument("--out", default=None)
+    add_provider_args(p_rec)
     p_rec.set_defaults(func=cmd_reconcile)
 
     p_doc = sub.add_parser("doctor", help="检查模型服务状态")

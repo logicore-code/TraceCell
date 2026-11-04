@@ -29,7 +29,7 @@ TraceCell is that layer.
 
 ## Demo
 
-A 40-second walkthrough is in `docs/demo.mp4` (recorded by
+A 36-second walkthrough is in `docs/demo.mp4` (recorded by
 `scripts/record_demo.py`):
 
 ![Demo video](docs/demo.mp4)
@@ -201,11 +201,13 @@ where those 16 are the ones with contested readings, failing arithmetic, or
 critical fields. The other 67 are confirmed clean, not unchecked.
 
 The sample set includes one case that makes the point: an invoice sells the
-company as `南京海川软件**股份**有限公司`, and the OCR reads it confidently
-(0.91) as `南京海川软件**股分**有限公司`. Trust the OCR and the wrong legal
-entity goes into the ledger. TraceCell flags it for review — and the
-cross-document check independently finds the same discrepancy from the contract
-side. Two unrelated chains point at the same error.
+company as `南京海川软件**股份**有限公司`, and one candidate reads it as
+`南京海川软件**股分**有限公司`. Jev scores that candidate 0.0000 — the strokes
+and the layout do not match — and 0.9980 for the re-read. The ledger ends up
+with the right name, and because three candidates disagree the confidence is
+discounted to 0.649, so the cell still goes to review. The cross-document check
+independently finds the same discrepancy from the contract side. Two unrelated
+chains point at the same error.
 
 ## Production surface
 

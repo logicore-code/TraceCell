@@ -84,9 +84,12 @@ tracecell mcp --session samples/sessions/demo.json
 | `tracecell_verify_document` | 核验一份文档，返回字段、置信度、待复核清单、成本 |
 | `tracecell_inspect_region` | 看某个区域的全部候选、坐标、决策理由 |
 | `tracecell_review_checklist` | 生成可直接当工单用的人工复核清单 |
-| `tracecell_export_ledger` | 导出 markdown / csv / json |
+| `tracecell_export_ledger` | 导出 markdown / csv / json / xlsx |
 | `tracecell_reconcile_documents` | 多份文档之间找金额、日期、主体名称的矛盾 |
 | `tracecell_calibrate_threshold` | 用标注样本标定自动放行阈值 |
+| `tracecell_check_consistency` | 单据内部勾稽：明细对合计、大写对小写 |
+| `tracecell_batch_verify` | 批量核验一个目录里的文档 |
+| `tracecell_submit_review` | 提交人工复核结论，回灌账本 |
 
 ## 关键约定（改代码前务必看）
 
