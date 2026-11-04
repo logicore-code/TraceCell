@@ -49,15 +49,15 @@ jobs:
           tracecell case vlm samples/invoice_001.png --doc-id invoice-001 --session samples/sessions
 
       - name: 装中文字体
-        run: sudo apt-get install -y fonts-noto-cjk fonts-arphic-ukai
+        run: sudo apt-get update && sudo apt-get install -y fonts-noto-cjk fonts-arphic-ukai
 
       - name: 检查样例数据自洽
         run: |
           # 生成到临时目录，不覆盖仓库里的
-          python scripts/make_samples.py --out "$RUNNER_TEMP/regen"
-          python scripts/make_samples_extra.py --out "$RUNNER_TEMP/regen"
+          python scripts/make_samples.py --out /tmp/tracecell-regen
+          python scripts/make_samples_extra.py --out /tmp/tracecell-regen
           # 字节一致要同版本字体才成立，那是本地的事；CI 查语义一致和内部自洽
-          python scripts/check_samples.py --regenerated "$RUNNER_TEMP/regen"
+          python scripts/check_samples.py --regenerated /tmp/tracecell-regen
 
   lint:
     name: 代码风格
