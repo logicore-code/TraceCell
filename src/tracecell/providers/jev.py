@@ -18,7 +18,9 @@ Jev 是一个 2B 的判别模型：给它一块原文区域图和一份候选识
 from __future__ import annotations
 
 import base64
+import json
 import time
+import urllib.request
 from typing import Any, Iterable
 
 import requests
@@ -201,3 +203,78 @@ class HttpJevScorer:
         if verdict_raw in ("failed", "error"):
             return ScoreResult(None, Verdict.FAILED, detail or "评分服务执行失败")
         return ScoreResult(None, Verdict.NOT_SCORED, detail or "评分未执行")
+
+
+class LlamaCppJevScorer:
+    """跑在 llama.cpp 上的 Jev（纯 CPU 端侧）。
+
+    官方给的两条部署路里，Docker 那条要 NVIDIA GPU；SDK 那条虽然支持
+    llama.cpp 后端，但要另起一个 Python 服务层。这里直接对 llama-server
+    说话，把中间那层省掉：
+
+        llama-server \
+          -m MiniCPM-OCR-Jev-Q4_K_M.gguf \
+          --mmproj mmproj-model-f16.gguf \
+          -c 8192 --port 18499
+
+    两个要点：
+
+    * **图像顺序是有讲究的**：原图在前、候选文本的渲染图在后。反过来问的
+      就不是同一个问题了，而且不会报错，只会给一个错的数。
+    * **渲染图要自己提供**：官方 SDK 用 Chromium 加中文字体渲染候选文本，
+      这里用 `tracecell.render` 做同样的事。渲染环境不同，绝对分数会差，
+      排序是稳的。
+    """
+
+    def __init__(
+        self,
+        base_url: str = "http://127.0.0.1:18499",
+        timeout: int = 600,
+        renderer=None,
+    ) -> None:
+        self.base_url = base_url.rstrip("/")
+        self.timeout = timeout
+        self._renderer = renderer
+
+    def _render(self, text: str) -> bytes:
+        if self._renderer is not None:
+            return self._renderer(text)
+        from ..render import render_text
+
+        return render_text(text)
+
+    def score(self, image: bytes, text: str, category: str = "text") -> ScoreResult:
+        """给一个候选打分。类别在这里用不上，模型只判断视觉一致性。"""
+
+        try:
+            body = {
+                "state": text,
+                "files": [
+                    _data_url(image),
+                    _data_url(self._render(text)),
+                ],
+                "questions": {
+                    "consistency": {"type": "choice", "criteria": {"0": None, "1": None}}
+                },
+            }
+            request = urllib.request.Request(
+                f"{self.base_url}/v1/systemone",
+                data=json.dumps(body).encode(),
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                payload = json.load(response)
+            probabilities = payload["answers"]["consistency"]["probabilities"]
+            value = float(probabilities["1"])
+        except Exception as exc:  # noqa: BLE001 - 失败要能降级而不是崩
+            return ScoreResult(None, Verdict.FAILED, f"Jev 评分失败：{exc}")
+        return ScoreResult(value, Verdict.SCORED)
+
+    def score_best(
+        self, image: bytes, candidates: list[str], category: str = "text"
+    ) -> list[ScoreResult]:
+        return [self.score(image, text, category) for text in candidates]
+
+
+def _data_url(image: bytes) -> str:
+    return "data:image/png;base64," + base64.b64encode(image).decode()

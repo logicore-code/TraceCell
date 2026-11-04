@@ -90,6 +90,45 @@ curl http://127.0.0.1:8030/healthz     # {"status":"ok"}
 > 含义是"没跑成"，不是"跑出来说不对"。TraceCell 的客户端把这两种情况分开
 > 处理，见 `providers/jev.py`。
 
+#### 不想用 Docker：llama.cpp 端侧跑 Jev
+
+Jev 有官方 GGUF，纯 CPU 也能跑。起 `llama-server`，不需要 Docker、不需要
+NVIDIA、不需要另起 Python 服务层：
+
+```bash
+git clone https://hf-mirror.com/openbmb/MiniCPM-OCR-Jev-gguf
+#   MiniCPM-OCR-Jev-Q4_K_M.gguf    1.27GB
+#   mmproj-model-f16.gguf           671MB
+
+llama-server \
+  -m MiniCPM-OCR-Jev-Q4_K_M.gguf \
+  --mmproj mmproj-model-f16.gguf \
+  -c 8192 --port 18499
+```
+
+然后让 TraceCell 用这个后端：
+
+```python
+from tracecell.providers.jev import LlamaCppJevScorer
+
+scorer = LlamaCppJevScorer(base_url="http://127.0.0.1:18499")
+```
+
+两个要点：
+
+- **图像顺序不能反**：原图在前、候选文本的渲染图在后。反过来问的就不是同一个
+  问题，而且不会报错，只会给一个错的数。
+- **渲染图要自己提供**。官方 SDK 用 Chromium 加中文字体渲染候选文本，
+  `tracecell.render` 做同样的事。渲染环境不同，绝对分数会差，排序是稳的。
+
+想在纯 CPU 上验证整条链路，用仓库里的录制脚本：
+
+```bash
+python3 scripts/record_jev.py --session samples/sessions/demo.json
+```
+
+它把每个候选读数都打一遍，结果写进 `samples/jev_scores.json`。
+
 ### 3. MiniCPM-V 4.7（升级复核）
 
 BF16 权重 65.6 GiB，24GB 卡放不下。按显存选版本：

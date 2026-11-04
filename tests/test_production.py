@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 from pathlib import Path
 
@@ -475,3 +476,87 @@ class TestRetryAndParallelBatch:
         summary = run_batch(files, process, jobs=4)
         assert [item.source for item in summary.items] == [str(f) for f in files]
         assert len(summary.ok) == 6
+
+
+class TestLlamaCppJev:
+    """llama.cpp 上的 Jev：纯 CPU 端侧部署，不依赖 Docker 和 GPU。"""
+
+    def _scorer(self, responder):
+        import urllib.request
+
+        class FakeResponse:
+            def __init__(self, payload):
+                self.payload = payload
+
+            def read(self):
+                return json.dumps(self.payload).encode()
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+        def fake_urlopen(request, timeout=None):
+            body = json.loads(request.data.decode())
+            responder(body)
+            return FakeResponse(
+                {"answers": {"consistency": {"probabilities": {"0": 0.01, "1": 0.99}}}}
+            )
+
+        urllib.request.urlopen = fake_urlopen
+        from tracecell.providers.jev import LlamaCppJevScorer
+
+        return LlamaCppJevScorer(renderer=lambda text: b"rendered")
+
+    def test_sends_original_then_render(self):
+        seen = {}
+
+        def responder(body):
+            seen.update(body)
+
+        scorer = self._scorer(responder)
+        result = scorer.score(b"original-bytes", "候选文本")
+        assert result.verdict is Verdict.SCORED
+        assert result.score == 0.99
+        # 原图在前、渲染图在后，顺序反了问的就不是同一个问题
+        assert len(seen["files"]) == 2
+        assert seen["files"][0].endswith(base64.b64encode(b"original-bytes").decode())
+        assert seen["files"][1].startswith("data:image/png;base64,")
+        assert seen["state"] == "候选文本"
+        assert "consistency" in seen["questions"]
+
+    def test_failure_degrades_instead_of_crashing(self):
+        import urllib.request
+
+        def boom(request, timeout=None):
+            raise OSError("连不上")
+
+        urllib.request.urlopen = boom
+        from tracecell.providers.jev import LlamaCppJevScorer
+
+        result = LlamaCppJevScorer(renderer=lambda text: b"x").score(b"y", "z")
+        assert result.verdict is Verdict.FAILED
+        assert result.score is None
+
+
+class TestRecordedScores:
+    """样例里的 Jev 分数是录制出来的真分数，不是手写的。"""
+
+    def test_scores_are_applied_to_matching_candidates(self):
+        from tracecell.recorded import apply_scores
+
+        candidates = [
+            {"text": "金额 100.00", "score": 0.1, "verdict": "scored"},
+            {"text": "金额 700.00", "score": 0.2, "verdict": "scored"},
+        ]
+        applied = apply_scores(candidates, {"金额 100.00": 0.987})
+        assert applied == 1
+        assert candidates[0]["score"] == 0.987
+        assert candidates[1]["score"] == 0.2
+
+    def test_missing_record_is_harmless(self):
+        from tracecell.recorded import apply_scores, load_scores
+
+        assert apply_scores([{"text": "x"}], None) == 0
+        assert load_scores("/nonexistent/jev_scores.json") == {}

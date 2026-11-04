@@ -28,6 +28,9 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
+
+sys.path.insert(0, str(ROOT / "src"))
+from tracecell.recorded import apply_scores, load_scores  # noqa: E402
 SAMPLES_DIR = ROOT / "samples"
 SESSIONS_DIR = SAMPLES_DIR / "sessions"
 
@@ -1362,9 +1365,14 @@ def main() -> None:
             },
         ]
     }
+    # Jev 分数用录制的真实分数，不是手写的
+    recorded = load_scores(SAMPLES_DIR / "jev_scores.json")
+    applied = 0
     for document in session["documents"]:
+        doc_scores = recorded.get(document["doc_id"], {})
         for region in document["regions"]:
             region.setdefault("truth", region["text"])
+            applied += apply_scores(region.get("candidates", []), doc_scores.get(region["id"]))
 
     add_digests(session)
     (SESSIONS_DIR / "demo.json").write_text(
