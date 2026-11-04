@@ -296,20 +296,27 @@ src/tracecell/
 └── web/app.py        web application
 ```
 
-## Limitations
+## Known boundaries
 
-- The bundled layout detector is projection-based. The official
-  PP-DocLayoutV3 is better but has to be downloaded separately.
-- Confidence is not a calibrated probability. The repository ships isotonic
-  regression for calibration, but it needs your own labelled data to be useful.
-- Consistency relations are declared per scenario. There is no automatic
-  inference — invoice tables mix line items with subtotals, and guessing
-  reliably misfires.
+- The bundled layout detector is projection-based and works at text-line
+  granularity, so complex tables and multi-column layouts drift. `detect` is an
+  interface — the official PP-DocLayoutV3 (ONNX) drops straight in.
+- Consistency relations are declared per scenario: sum, product, amount-forms,
+  rows-product, rows-sum. Relations with division are not included — the
+  tolerance is hard to pick and false positives are worse than misses.
+- Line-item tables are extracted per row; a table split across pages is not
+  stitched back together.
 - Reconciliation compares field values. It does not understand clause semantics:
   two contracts with identical amounts can still be legally incompatible.
   TraceCell catches transcription errors, not bad drafting.
-- Line-item tables are extracted per row; a table split across pages is not
-  stitched back together.
+- A whole-paragraph hallucination in a contract body is only partly caught by
+  the region-level loop; solving it properly needs a semantic consistency layer.
+- Confidence is a ranking score, not a probability: 0.9 does not mean 90%
+  correct. The repository ships isotonic regression for calibration, but it
+  needs your own labelled data to be useful.
+- Jev cannot judge seals and graphics — on the samples those regions score
+  0.11~0.58 even though their text is correct. Rules and human review cover
+  those, not the model.
 
 ## License
 
