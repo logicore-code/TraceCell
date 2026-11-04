@@ -367,9 +367,11 @@ class VerificationLoop:
             answer = self.escalator.review(crop, question)
             if not answer:
                 return False
-            candidate = Candidate(text=answer, origin="vlm-review", verdict=Verdict.NOT_SCORED)
+            # 回答多半是个片段（"股份"），但候选要的是整块文本
+            text = _align_to_candidate(answer, [c.text for c in region.candidates])
+            candidate = Candidate(text=text, origin="vlm-review", verdict=Verdict.NOT_SCORED)
             region.candidates.append(candidate)
-            result = self.scorer.score(crop, answer, _jev_category(region.category))
+            result = self.scorer.score(crop, text, _jev_category(region.category))
             candidate.score = result.score
             candidate.verdict = result.verdict
             candidate.detail = result.detail
@@ -441,6 +443,35 @@ def _contested(region: Region) -> bool:
     if len(scored) < 2:
         return False
     return len({c.text for c in scored}) > 1
+
+
+def _align_to_candidate(answer: str, candidates: list[str]) -> str:
+    """把模型的回答对齐到某个候选的完整文本。
+
+    问的是「这三个里哪个对」，模型答的多半是片段（"股份"、"李思源"）。但
+    候选要的是整块区域的文本——拿片段直接去评分，等于拿半句话和原图比，
+    分数低得没道理，好答案会被当成坏答案扔掉。
+
+    所以能对上某个候选就用那个候选的完整文本。对不上就原样用（那种情况
+    模型是在自由作答，交给 Jev 判）。
+    """
+
+    from ..textnorm import normalize
+
+    answer_norm = normalize(answer)
+    if not answer_norm:
+        return answer
+    matched = ""
+    best_text = ""
+    for text in candidates:
+        other = normalize(text)
+        if not other:
+            continue
+        if answer_norm in other or other in answer_norm:
+            if len(other) > len(matched):
+                matched = other
+                best_text = text
+    return best_text if matched else answer
 
 
 def _is_better(region: Region, candidate: Candidate) -> bool:

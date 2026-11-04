@@ -99,6 +99,17 @@ class BaselineReport:
         return "\n".join(lines)
 
 
+def _same_text(left: str, right: str) -> bool:
+    """字符层面是不是同一段文字。
+
+    识别错误比的是"纸上印的是什么"，不是"值对不对"。大写金额的"圆整"和
+    "元整"值一样，但纸上印的是"元整"，读成"圆整"仍然是读错了——Jev 也确实
+    把这两种写法判成不一样的（渲染出来和原图对不上）。
+    """
+
+    return normalize(left) == normalize(right)
+
+
 def _same_reading(left: str, right: str) -> bool:
     """两次读法是不是同一个意思。
 
@@ -161,7 +172,10 @@ def compare(
             truth = truths.get((doc_id, region.id))
             if truth is None:
                 continue
-            if not _same_reading(_accepted_by_ocr(region), truth):
+            # 识别错误比的是"纸上印的是什么"。纸上印的本身就错（单据笔误）
+            # 那不是识别错误，是单据自己的矛盾，交给勾稽和跨文档对账算。
+            # 两类各算各的，不重复计数。
+            if not _same_text(_accepted_by_ocr(region), region.text):
                 reading_errors += 1
                 ocr_missed += 1
                 ocr_missed_regions.append(f"{doc_id}:{region.id}")

@@ -165,6 +165,39 @@ def check_regenerated(regenerated: Path, problems: list[str]) -> None:
                             problems.append(f"  {name}:{a.get('doc_id')} 的 {key} 对不上")
 
 
+def check_vlm_reviews(problems: list[str]) -> None:
+    """V 4.7 的复核记录和会话对不对得上。"""
+
+    path = SAMPLES / "vlm_review" / "reviews.json"
+    if not path.exists():
+        return
+    reviews = load(path)
+    sessions = {p.name: load(p) for p in sorted(SESSIONS.glob("*.json"))}
+
+    for key, record in reviews.items():
+        doc_id = record["doc_id"]
+        region_id = record["region_id"]
+        found = False
+        for session in sessions.values():
+            for document in session.get("documents", []):
+                if document.get("doc_id") != doc_id:
+                    continue
+                for region in document.get("regions", []):
+                    if region.get("id") != region_id:
+                        continue
+                    found = True
+                    if record.get("truth") != region.get("truth"):
+                        problems.append(f"{key}：真值和会话里的对不上")
+                    texts = [c.get("text") for c in region.get("candidates", [])]
+                    if record.get("vlm_answer") not in texts:
+                        problems.append(
+                            f"{key}：V 4.7 的回答「{str(record.get('vlm_answer'))[:20]}」"
+                            "不在候选里"
+                        )
+        if not found:
+            problems.append(f"{key}：会话里找不到这个区域")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="检查样例数据是否自洽")
     parser.add_argument("--regenerated", help="重新生成的样例目录，用来比对语义")
@@ -172,6 +205,7 @@ def main() -> int:
 
     problems: list[str] = []
     check_internal(problems)
+    check_vlm_reviews(problems)
     if args.regenerated:
         check_regenerated(Path(args.regenerated), problems)
 

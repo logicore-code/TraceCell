@@ -175,11 +175,15 @@ $ tracecell baseline --session samples/sessions
 Strategy            Human review    Share    Missed: OCR    Missed: document    Cost
 ------------------------------------------------------------------------------------
 All by hand               83      100.0%             0                 0      0.00 rcu
-Trust the OCR              0        0.0%             3                 8      0.00 rcu
+Trust the OCR              0        0.0%             2                 8      0.00 rcu
 TraceCell                 16       19.3%             0                 0     54.00 rcu
 
-83 regions in total: 3 reading errors, 8 document-level contradictions.
+83 regions in total: 2 reading errors, 8 document-level contradictions.
 ```
+
+The two error classes do not overlap: a reading error is measured against what
+is printed on the page, so a document that is wrong on paper is a contradiction,
+not a misreading.
 
 The second row is the interesting one. "Trust the OCR" misses 8 contradictions
 that OCR read *perfectly*. A better model does not help; only cross-field

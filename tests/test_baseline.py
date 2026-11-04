@@ -22,16 +22,20 @@ def make_ledger(
     regions: list[tuple[str, str, str, float]],
     queue: list[str] | None = None,
 ) -> DocumentLedger:
-    """regions 是 (区域id, primary读数, 其它候选读数, primary分数)。"""
+    """regions 是 (区域id, primary读数, 纸上印的, primary分数)。
+
+    `Region.text` 是**纸上印的内容**——识别错误比的是它。纸上印的本身就错
+    （单据笔误）是另一类错误，交给勾稽算，不算识别错误。
+    """
 
     ledger = DocumentLedger(doc_id=doc_id, source=f"{doc_id}.png")
-    for region_id, primary, other, score in regions:
+    for region_id, primary, printed, score in regions:
         candidates = [
             Candidate(text=primary, origin="primary", score=score, verdict=Verdict.SCORED)
         ]
-        if other:
+        if printed and printed != primary:
             candidates.append(
-                Candidate(text=other, origin="reparse-16x", score=0.4, verdict=Verdict.SCORED)
+                Candidate(text=printed, origin="reparse-16x", score=0.4, verdict=Verdict.SCORED)
             )
         ledger.regions.append(
             Region(
@@ -39,7 +43,7 @@ def make_ledger(
                 page=1,
                 bbox=BBox(0.1, 0.1, 0.6, 0.2),
                 category=Category.TEXT,
-                text=primary,
+                text=printed,
                 candidates=candidates,
             )
         )
@@ -120,3 +124,28 @@ class TestCompare:
         assert "全量人工" in text
         assert "只信 OCR" in text
         assert "TraceCell" in text
+
+
+class TestErrorClassification:
+    """识别错误和单据矛盾各算各的，不重复计数。"""
+
+    def test_a_document_typo_is_not_a_reading_error(self):
+        """纸上印的本身就错（单据笔误），OCR 读对了，不算识别错误。"""
+
+        ledger = make_ledger("d1", [("r000", "边缘网关设备 26,600.00", "边缘网关设备 26,600.00", 0.83)])
+        truths = {("d1", "r000"): "边缘网关设备 23,600.00"}
+        report = compare([ledger], truths, document_errors=1)
+        ocr = next(r for r in report.results if r.name == OCR_ONLY)
+        assert ocr.missed_reading_errors == 0
+        assert ocr.missed_document_errors == 1
+
+    def test_a_character_misread_is_a_reading_error(self):
+        """「圆整」和「元整」值一样，但纸上印的是「元整」，读成「圆整」仍然是读错。"""
+
+        ledger = make_ledger(
+            "d1", [("r000", "合同金额（大写）：伍拾捌万圆整", "合同金额（大写）：伍拾捌万元整", 0.93)]
+        )
+        truths = {("d1", "r000"): "合同金额（大写）：伍拾捌万元整"}
+        report = compare([ledger], truths, document_errors=0)
+        ocr = next(r for r in report.results if r.name == OCR_ONLY)
+        assert ocr.missed_reading_errors == 1

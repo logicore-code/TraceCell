@@ -1,0 +1,164 @@
+{
+  "contract-001:r009": {
+    "candidates": [
+      {
+        "origin": "primary",
+        "score": 0.000109,
+        "text": "合同金额（大写）：伍拾捌万圆整"
+      },
+      {
+        "origin": "reparse-16x",
+        "score": 0.992997,
+        "text": "合同金额（大写）：伍拾捌万元整"
+      },
+      {
+        "origin": "reparse-16x",
+        "score": 6.3e-05,
+        "text": "合同金额（大写）：伍拾捌万圆整。"
+      }
+    ],
+    "category": "text",
+    "doc_id": "contract-001",
+    "jev_score": 0.9936149849412899,
+    "jev_verdict": "scored",
+    "question": "这块区域的内容是「合同金额（大写）：伍拾捌万圆整，还是 合同金额（大写）：伍拾捌万元整，还是 合同金额（大写）：伍拾捌万圆整。」中的哪一个？只回答正确的那个，不要解释。",
+    "region_id": "r009",
+    "truth": "合同金额（大写）：伍拾捌万元整",
+    "vlm_answer": "合同金额（大写）：伍拾捌万元整"
+  },
+  "expense-001:r003": {
+    "candidates": [
+      {
+        "origin": "primary",
+        "score": 0.984142,
+        "text": "报销人：李思远"
+      },
+      {
+        "origin": "reparse-16x",
+        "score": 0.142536,
+        "text": "报销人：李思源"
+      },
+      {
+        "origin": "reparse-16x",
+        "score": 0.000358,
+        "text": "报销人：李思沅"
+      }
+    ],
+    "category": "text",
+    "doc_id": "expense-001",
+    "jev_score": 0.11831824426323406,
+    "jev_verdict": "scored",
+    "question": "这块区域的内容是「报销人：李思远，还是 报销人：李思源，还是 报销人：李思沅」中的哪一个？只回答正确的那个，不要解释。",
+    "region_id": "r003",
+    "truth": "报销人：李思远",
+    "vlm_answer": "报销人：李思源"
+  },
+  "financial-statement-001:r009": {
+    "candidates": [
+      {
+        "origin": "primary",
+        "score": 0.966221,
+        "text": "所有者权益合计：¥14,100,000.00"
+      },
+      {
+        "origin": "reparse-16x",
+        "score": 0.0,
+        "text": "所有者权益合计：¥14,100,900.00"
+      },
+      {
+        "origin": "vlm-review",
+        "score": 0.966221,
+        "text": "所有者权益合计：¥14,100,000.00"
+      }
+    ],
+    "category": "text",
+    "doc_id": "financial-statement-001",
+    "jev_score": 2.787239189393441e-07,
+    "jev_verdict": "scored",
+    "question": "这块区域的内容是「所有者权益合计：¥14,100,000.00，还是 所有者权益合计：¥14,100,900.00」中的哪一个？只回答正确的那个，不要解释。",
+    "region_id": "r009",
+    "truth": "所有者权益合计：¥14,200,000.00",
+    "vlm_answer": "所有者权益合计：¥14,100,900.00"
+  },
+  "invoice-001:r004": {
+    "candidates": [
+      {
+        "origin": "primary",
+        "score": 0.0,
+        "text": "销售方名称：南京海川软件股分有限公司"
+      },
+      {
+        "origin": "reparse-16x",
+        "score": 0.997959,
+        "text": "销售方名称：南京海川软件股份有限公司"
+      },
+      {
+        "origin": "reparse-16x",
+        "score": 0.0,
+        "text": "销售方名称：南京海川软件股分有限公同"
+      }
+    ],
+    "category": "text",
+    "doc_id": "invoice-001",
+    "jev_score": 0.9980683841128077,
+    "jev_verdict": "scored",
+    "question": "这块区域的内容是「销售方名称：南京海川软件股分有限公司，还是 销售方名称：南京海川软件股份有限公司，还是 销售方名称：南京海川软件股分有限公同」中的哪一个？只回答正确的那个，不要解释。",
+    "region_id": "r004",
+    "truth": "销售方名称：南京海川软件股份有限公司",
+    "vlm_answer": "销售方名称：南京海川软件股份有限公司"
+  },
+  "invoice-001:r014": {
+    "candidates": [
+      {
+        "origin": "primary",
+        "score": 0.993042,
+        "text": "价税合计（小写）¥145,318.00"
+      },
+      {
+        "origin": "reparse-16x",
+        "score": 0.0,
+        "text": "价税合计（小写）¥145,818.00"
+      },
+      {
+        "origin": "vlm-review",
+        "score": 0.993042,
+        "text": "价税合计（小写）¥145,318.00"
+      },
+      {
+        "origin": "reparse-16x",
+        "score": 3e-06,
+        "text": "价税合计（小写）¥145,318.OO"
+      }
+    ],
+    "category": "text",
+    "doc_id": "invoice-001",
+    "jev_score": 0.9934579527646654,
+    "jev_verdict": "scored",
+    "question": "这块区域的内容是「价税合计（小写）¥145,318.00，还是 价税合计（小写）¥145,818.00，还是 价税合计（小写）¥145,318.OO」中的哪一个？只回答正确的那个，不要解释。",
+    "region_id": "r014",
+    "truth": "价税合计（小写）¥145,318.00",
+    "vlm_answer": "价税合计（小写）¥145,318.00"
+  },
+  "purchase-contract-001:r010": {
+    "candidates": [
+      {
+        "origin": "primary",
+        "score": 0.985519,
+        "text": "合同总价（大写）：壹拾柒万柒仟零柒拾壹元整"
+      },
+      {
+        "origin": "reparse-16x",
+        "score": 0.00358,
+        "text": "合同总价（大写）：壹拾柒万柒仟零柒拾壹圆整"
+      }
+    ],
+    "category": "text",
+    "doc_id": "purchase-contract-001",
+    "jev_score": 0.9839956898552957,
+    "jev_verdict": "scored",
+    "question": "这块区域的内容是「合同总价（大写）：壹拾柒万柒仟零柒拾壹元整，还是 合同总价（大写）：壹拾柒万柒仟零柒拾壹圆整」中的哪一个？只回答正确的那个，不要解释。",
+    "region_id": "r010",
+    "truth": "合同总价（大写）：壹拾柒万柒仟零柒拾壹元整",
+    "vlm_answer": "合同总价（大写）：壹拾柒万柒仟零柒拾壹元整"
+  }
+}

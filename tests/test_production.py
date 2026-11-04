@@ -596,3 +596,42 @@ class TestRenderer:
 
         assert render.LINE_HEIGHT == 2.0
         assert render.FONT_SIZE == 18
+
+
+class TestVlmAnswerAlignment:
+    """多模态模型的回答多半是个片段，候选要的是整块文本。"""
+
+    def test_fragment_is_mapped_to_the_full_candidate(self):
+        from tracecell.agent.loop import _align_to_candidate
+
+        candidates = [
+            "销售方名称：南京海川软件股分有限公司",
+            "销售方名称：南京海川软件股份有限公司",
+        ]
+        assert (
+            _align_to_candidate("南京海川软件股份有限公司", candidates)
+            == "销售方名称：南京海川软件股份有限公司"
+        )
+
+    def test_amount_fragment_is_mapped(self):
+        from tracecell.agent.loop import _align_to_candidate
+
+        candidates = ["价税合计（小写）¥145,318.00", "价税合计（小写）¥145,818.00"]
+        assert _align_to_candidate("¥145,318.00", candidates) == "价税合计（小写）¥145,318.00"
+
+    def test_unrelated_answer_is_left_alone(self):
+        from tracecell.agent.loop import _align_to_candidate
+
+        candidates = ["报销人：李思远"]
+        assert _align_to_candidate("完全不相干", candidates) == "完全不相干"
+
+    def test_wrong_but_matching_answer_stays_wrong(self):
+        """模型答错了，但对得上某个候选——照样用那个候选的文本。
+
+        对不对由 Jev 判，这里只负责把片段补成完整文本。
+        """
+
+        from tracecell.agent.loop import _align_to_candidate
+
+        candidates = ["报销人：李思远", "报销人：李思源"]
+        assert _align_to_candidate("李思源", candidates) == "报销人：李思源"
