@@ -73,6 +73,10 @@ CrossRule("financial_statement", "营业收入", "invoice", "金额", "money"),
 
 ## 长什么样
 
+先看 40 秒的演示（`docs/demo.mp4`，录屏脚本是 `scripts/record_demo.py`）：
+
+![演示视频](docs/demo.mp4)
+
 输入一张单据，输出的是一张台账。每一行都能点开，看见它在原图上的那一格：
 
 ![字段证据回溯](docs/images/evidence.png)

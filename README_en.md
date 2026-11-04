@@ -27,6 +27,13 @@ reading is worth the compute, and what happens when two documents disagree.
 
 TraceCell is that layer.
 
+## Demo
+
+A 40-second walkthrough is in `docs/demo.mp4` (recorded by
+`scripts/record_demo.py`):
+
+![Demo video](docs/demo.mp4)
+
 ## What it produces
 
 Given a document, TraceCell produces an **evidence ledger** rather than a
