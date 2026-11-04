@@ -860,7 +860,12 @@ def split_into_pdf(page, pages: int = 2):
 
     buffer = _io.BytesIO()
     images[0].save(buffer, format="PDF", save_all=True, append_images=images[1:])
-    return buffer.getvalue(), regions
+    # PIL 会往 PDF 里写创建时间戳，那样每次生成的字节都不一样，
+    # 仓库里的样例就没法自证可复现。抹平成一个固定值。
+    import re as _re
+
+    fixed = _re.sub(rb"D:\d{14}", b"D:20260101000000", buffer.getvalue())
+    return fixed, regions
 
 
 def add_digests(session: dict) -> dict:
